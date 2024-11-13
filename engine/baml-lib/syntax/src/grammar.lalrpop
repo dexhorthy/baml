@@ -1,0 +1,63 @@
+grammar(
+    src_file: &SourceFile, // TODO: Replace this with a src_id.
+);
+
+use crate::forms::class::{Class, Field};
+use crate::pos::{mk_pos, WithPos};
+use crate::forms::identifier::Identifier;
+use internal_baml_diagnostics::{DatamodelError, Diagnostics, SourceFile, Span};
+
+
+// WithPos<Rule>: Rule = <l: @L> <t: Rule> <r: @R> => t.with_pos(mk_pos(src_id, l, r))
+
+pub Identifier: Identifier<Span> = {
+    <l: @L> <s:r"[a-zA-Z][a-zA-Z0-9_]*"> <r: @R> => {
+        let span = mk_pos(l, r);
+        Identifier{name: s.to_string(), meta: span}
+    }
+};
+
+// class Foo {
+//   foo int
+//   bar string[]
+// }
+pub Class: Class<Span> = {
+    "class" <name:Identifier> "{" <fields:FieldList> "}" => {
+        let span = <>.0..<>.2;
+        Class {
+            name,
+            fields,
+            span,
+        }
+    }
+};
+
+FieldList: Vec<Field<Span>> = {
+    <fields:Field> => vec![fields],
+    <mut fields:FieldList> <field:Field> => {
+        fields.push(field);
+        fields
+    }
+};
+
+Field: Field<Span> = {
+    <name:Identifier> <type_:Type> => {
+        let span = <>.0..<>.1;
+        Field {
+            name,
+            type_,
+            span,
+        }
+    }
+};
+
+Type: Identifier<Span> = {
+    <base:Identifier> => base,
+    <base:Identifier> "[" "]" => {
+        let span = <>.0..<>.2;
+        let mut type_name = base.0.clone();
+        type_name.push_str("[]");
+        Identifier(type_name, span)
+    }
+};
+
