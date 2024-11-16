@@ -1292,6 +1292,29 @@ class BamlAsyncClient:
       )
       return cast(types.SearchParams, raw.cast_to(types, types))
     
+    async def InOutEnumMapKey(
+        self,
+        i1: Dict[types.MapKey, str],i2: Dict[types.MapKey, str],
+        baml_options: BamlCallOptions = {},
+    ) -> Dict[types.MapKey, str]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = await self.__runtime.call_function(
+        "InOutEnumMapKey",
+        {
+          "i1": i1,"i2": i2,
+        },
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+      return cast(Dict[types.MapKey, str], raw.cast_to(types, types))
+    
     async def LiteralUnionsTest(
         self,
         input: str,
@@ -4303,6 +4326,37 @@ class BamlStreamClient:
         raw,
         lambda x: cast(partial_types.SearchParams, x.cast_to(types, partial_types)),
         lambda x: cast(types.SearchParams, x.cast_to(types, types)),
+        self.__ctx_manager.get(),
+      )
+    
+    def InOutEnumMapKey(
+        self,
+        i1: Dict[types.MapKey, str],i2: Dict[types.MapKey, str],
+        baml_options: BamlCallOptions = {},
+    ) -> baml_py.BamlStream[Dict[types.MapKey, Optional[str]], Dict[types.MapKey, str]]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = self.__runtime.stream_function(
+        "InOutEnumMapKey",
+        {
+          "i1": i1,
+          "i2": i2,
+        },
+        None,
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+
+      return baml_py.BamlStream[Dict[types.MapKey, Optional[str]], Dict[types.MapKey, str]](
+        raw,
+        lambda x: cast(Dict[types.MapKey, Optional[str]], x.cast_to(types, partial_types)),
+        lambda x: cast(Dict[types.MapKey, str], x.cast_to(types, types)),
         self.__ctx_manager.get(),
       )
     

@@ -105,6 +105,12 @@ class Hobby(str, Enum):
     MUSIC = "MUSIC"
     READING = "READING"
 
+class MapKey(str, Enum):
+    
+    A = "A"
+    B = "B"
+    C = "C"
+
 class NamedArgsSingleEnum(str, Enum):
     
     ONE = "ONE"

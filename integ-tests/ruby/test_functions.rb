@@ -67,6 +67,10 @@ describe "ruby<->baml integration tests" do
 
     res = b.TestFnNamedArgsSingleMapStringToMap(myMap: {"lorem" => {"word" => "ipsum"}})
     assert_equal res['lorem']['word'], "ipsum"
+
+    res = b.InOutEnumMapKey(i1: {"A" => "A"}, i2: {"B" => "B"})
+    assert_equal res['A'], "A"
+    assert_equal res['B'], "B"
   end
 
   it "accepts subclass of baml type" do

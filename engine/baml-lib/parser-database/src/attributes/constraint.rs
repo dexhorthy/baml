@@ -23,7 +23,7 @@ pub(super) fn visit_constraint_attributes(
             ctx.push_error(DatamodelError::new_attribute_validation_error(
                 "Internal error - the parser should have ruled out other attribute names.",
                 other_name,
-                span
+                span,
             ));
             return ();
         }

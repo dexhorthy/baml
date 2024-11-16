@@ -1,4 +1,5 @@
 use baml_types::TypeValue;
+use either::Either;
 use internal_baml_diagnostics::{DatamodelError, DatamodelWarning, Span};
 use internal_baml_schema_ast::ast::{
     Argument, Attribute, Expression, FieldArity, FieldType, Identifier, WithName, WithSpan,
@@ -57,10 +58,19 @@ fn validate_type_allowed(ctx: &mut Context<'_>, field_type: &FieldType) {
                 ));
             }
             match &kv_types.0 {
+                // String key.
                 FieldType::Primitive(FieldArity::Required, TypeValue::String, ..) => {}
+
+                // Enum key.
+                FieldType::Symbol(_, identifier, _)
+                    if ctx
+                        .db
+                        .find_type(identifier)
+                        .is_some_and(|t| matches!(t, Either::Right(_))) => {}
+
                 key_type => {
                     ctx.push_error(DatamodelError::new_validation_error(
-                        "Maps may only have strings as keys",
+                        "Maps may only have strings or enums as keys",
                         key_type.span().clone(),
                     ));
                 }

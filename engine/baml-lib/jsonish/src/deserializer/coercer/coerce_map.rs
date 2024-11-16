@@ -28,7 +28,10 @@ pub(super) fn coerce_map(
         return Err(ctx.error_unexpected_type(map_target, value));
     };
 
-    if !matches!(**key_type, FieldType::Primitive(TypeValue::String)) {
+    if !matches!(
+        **key_type,
+        FieldType::Primitive(TypeValue::String) | FieldType::Enum(_)
+    ) {
         return Err(ctx.error_map_must_have_string_key(key_type));
     }
 

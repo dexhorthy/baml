@@ -273,7 +273,13 @@ impl ToTypeReferenceInClientDefinition for FieldType {
                 _ => format!("{}[]", inner.to_type_ref(ir)),
             },
             FieldType::Map(key, value) => {
-                format!("Record<{}, {}>", key.to_type_ref(ir), value.to_type_ref(ir))
+                let k = key.to_type_ref(ir);
+                let v = value.to_type_ref(ir);
+
+                match key.as_ref() {
+                    FieldType::Enum(_) => format!("Partial<Record<{k}, {v}>>"),
+                    _ => format!("Record<{k}, {v}>"),
+                }
             }
             FieldType::Primitive(r#type) => r#type.to_typescript(),
             // In typescript we can just use literal values as type defs.
@@ -295,17 +301,13 @@ impl ToTypeReferenceInClientDefinition for FieldType {
                     .join(", ")
             ),
             FieldType::Optional(inner) => format!("{} | null", inner.to_type_ref(ir)),
-            FieldType::Constrained{base,..} => {
-                match field_type_attributes(self) {
-                    Some(checks) => {
-                        let base_type_ref = base.to_type_ref(ir);
-                        let checks_type_ref = type_name_for_checks(&checks);
-                        format!("Checked<{base_type_ref},{checks_type_ref}>")
-                    }
-                    None => {
-                        base.to_type_ref(ir)
-                    }
+            FieldType::Constrained { base, .. } => match field_type_attributes(self) {
+                Some(checks) => {
+                    let base_type_ref = base.to_type_ref(ir);
+                    let checks_type_ref = type_name_for_checks(&checks);
+                    format!("Checked<{base_type_ref},{checks_type_ref}>")
                 }
+                None => base.to_type_ref(ir),
             },
         }
     }

@@ -91,6 +91,13 @@ module Baml
         READING = new("READING")
       end
     end
+    class MapKey < T::Enum
+      enums do
+        A = new("A")
+        B = new("B")
+        C = new("C")
+      end
+    end
     class NamedArgsSingleEnum < T::Enum
       enums do
         ONE = new("ONE")
