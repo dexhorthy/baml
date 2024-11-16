@@ -30,22 +30,26 @@ pub(super) fn coerce_map(
         return Err(ctx.error_unexpected_type(map_target, value));
     };
 
-    if !matches!(
-        **key_type,
-        FieldType::Primitive(TypeValue::String) | FieldType::Enum(_) | FieldType::Union(_)
-    ) {
-        return Err(ctx.error_map_must_have_supported_key(key_type));
-    }
+    match key_type.as_ref() {
+        // String, enum or just one literal string, OK.
+        FieldType::Primitive(TypeValue::String)
+        | FieldType::Enum(_)
+        | FieldType::Literal(LiteralValue::String(_)) => {}
 
-    if let FieldType::Union(items) = &**key_type {
-        let mut queue = VecDeque::from_iter(items.iter());
-        while let Some(item) = queue.pop_front() {
-            match item {
-                FieldType::Literal(LiteralValue::String(_)) => continue,
-                FieldType::Union(nested) => queue.extend(nested.iter()),
-                other => return Err(ctx.error_map_must_have_supported_key(other)),
+        // For unions we need to check if all the items are literal strings.
+        FieldType::Union(items) => {
+            let mut queue = VecDeque::from_iter(items.iter());
+            while let Some(item) = queue.pop_front() {
+                match item {
+                    FieldType::Literal(LiteralValue::String(_)) => continue,
+                    FieldType::Union(nested) => queue.extend(nested.iter()),
+                    other => return Err(ctx.error_map_must_have_supported_key(other)),
+                }
             }
         }
+
+        // Key type not allowed.
+        other => return Err(ctx.error_map_must_have_supported_key(other)),
     }
 
     let mut flags = DeserializerConditions::new();
