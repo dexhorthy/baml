@@ -9,12 +9,6 @@ foo // this is a trailing comment
 
 ## Docstrings
 
-We have no special syntax for docstrings. Instead, we use comments.
-Eventually, we'll support a `///` syntax for docstrings which will
-also be used for generating documentation in `baml_client`.
-
-{/* ## Docstrings
-
 To add a docstring to any block, use `///`.
 
 ```baml
@@ -23,7 +17,10 @@ class Foo {
     /// This is a docstring for a property
     property1 string
 }
-``` */}
+```
+
+Docstrings in BAML code will be carried through to generated types.
+They are not forwarded to the LLM through prompts.
 
 {/* ## Multiline comments
 

@@ -121,7 +121,9 @@ pub fn parse_schema(
                             // Some(Rule::enum_declaration) => {
                             //     pending_block_comment = Some(current);
                             // }
-                            _ => (),
+                            _ => {
+                                pending_block_comment = Some(current);
+                            }
                         }
                     }
                     // We do nothing here.
@@ -243,6 +245,103 @@ mod tests {
 
         let result = parse_schema(&root_path.into(), &source).unwrap();
         assert_eq!(result.1.errors().len(), 0);
+    }
+
+    #[test]
+    fn test_comments() {
+        let input = r##"
+          /// Doc comment for Foo
+          /// has multiple lines
+          class Foo {
+            /// A nice bar.
+            bar int
+
+            /// Followed by a
+            /// multiline baz.
+            baz string
+          }
+
+          /// Documented enum.
+          enum E {
+            /// Documented variant.
+            EFoo
+
+            /// Another documented variant.
+            EBar
+            EBaz
+          }
+        "##;
+        let root_path = "a.baml";
+        let source = SourceFile::new_static(root_path.into(), input);
+        let schema = parse_schema(&root_path.into(), &source).unwrap().0;
+        let mut tops = schema.iter_tops();
+        let foo_top = tops.next().unwrap().1;
+        match foo_top {
+            Top::Class(TypeExpressionBlock {
+                name,
+                fields,
+                documentation,
+                ..
+            }) => {
+                assert_eq!(name.to_string().as_str(), "Foo");
+                assert_eq!(
+                    documentation.as_ref().unwrap().text.as_str(),
+                    "Doc comment for Foo\nhas multiple lines"
+                );
+                match fields.as_slice() {
+                    [field1, field2] => {
+                        assert_eq!(
+                            field1.documentation.as_ref().unwrap().text.as_str(),
+                            "A nice bar."
+                        );
+                        assert_eq!(
+                            field2.documentation.as_ref().unwrap().text.as_str(),
+                            "Followed by a\nmultiline baz."
+                        );
+                    }
+                    _ => {
+                        panic!("Expected exactly 2 fields");
+                    }
+                }
+            }
+            _ => {
+                panic!("Expected class.")
+            }
+        }
+        let e_top = tops.next().unwrap().1;
+        match e_top {
+            Top::Enum(TypeExpressionBlock {
+                name,
+                fields,
+                documentation,
+                ..
+            }) => {
+                assert_eq!(name.to_string().as_str(), "E");
+                assert_eq!(
+                    documentation.as_ref().unwrap().text.as_str(),
+                    "Documented enum."
+                );
+                match fields.as_slice() {
+                    [field1, field2, field3] => {
+                        assert_eq!(
+                            field1.documentation.as_ref().unwrap().text.as_str(),
+                            "Documented variant."
+                        );
+                        assert_eq!(
+                            field2.documentation.as_ref().unwrap().text.as_str(),
+                            "Another documented variant."
+                        );
+                        assert!(field3.documentation.is_none());
+                    }
+                    _ => {
+                        panic!("Expected exactly 3 enum variants");
+                    }
+                }
+            }
+            _ => {
+                panic!("Expected enum. got {e_top:?}")
+            }
+        }
     }
 }
 
