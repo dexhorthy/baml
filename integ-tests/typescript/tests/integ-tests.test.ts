@@ -137,6 +137,12 @@ describe('Integ tests', () => {
       expect(res).toHaveProperty(MapKey.A, 'A')
       expect(res).toHaveProperty(MapKey.B, 'B')
     })
+
+    it('literal key in map', async () => {
+      const res = await b.InOutLiteralMapKey({ one: '1' }, { two: '2' })
+      expect(res).toHaveProperty('one', '1')
+      expect(res).toHaveProperty('two', '2')
+    })
   })
 
   it('should work for all outputs', async () => {

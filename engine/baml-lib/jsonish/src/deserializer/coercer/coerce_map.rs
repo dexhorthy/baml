@@ -1,10 +1,12 @@
+use std::collections::VecDeque;
+
 use anyhow::Result;
 
 use crate::deserializer::{
     deserialize_flags::{DeserializerConditions, Flag},
     types::BamlValueWithFlags,
 };
-use baml_types::{BamlMap, FieldType, TypeValue};
+use baml_types::{BamlMap, FieldType, LiteralValue, TypeValue};
 
 use super::{ParsingContext, ParsingError, TypeCoercer};
 
@@ -30,9 +32,20 @@ pub(super) fn coerce_map(
 
     if !matches!(
         **key_type,
-        FieldType::Primitive(TypeValue::String) | FieldType::Enum(_)
+        FieldType::Primitive(TypeValue::String) | FieldType::Enum(_) | FieldType::Union(_)
     ) {
-        return Err(ctx.error_map_must_have_string_key(key_type));
+        return Err(ctx.error_map_must_have_supported_key(key_type));
+    }
+
+    if let FieldType::Union(items) = &**key_type {
+        let mut queue = VecDeque::from_iter(items.iter());
+        while let Some(item) = queue.pop_front() {
+            match item {
+                FieldType::Literal(LiteralValue::String(_)) => continue,
+                FieldType::Union(nested) => queue.extend(nested.iter()),
+                other => return Err(ctx.error_map_must_have_supported_key(other)),
+            }
+        }
     }
 
     let mut flags = DeserializerConditions::new();

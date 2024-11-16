@@ -4,6 +4,7 @@ mod typescript_language_features;
 use std::path::PathBuf;
 
 use anyhow::Result;
+use baml_types::LiteralValue;
 use generate_types::type_name_for_checks;
 use indexmap::IndexMap;
 use internal_baml_core::{
@@ -277,7 +278,11 @@ impl ToTypeReferenceInClientDefinition for FieldType {
                 let v = value.to_type_ref(ir);
 
                 match key.as_ref() {
-                    FieldType::Enum(_) => format!("Partial<Record<{k}, {v}>>"),
+                    FieldType::Enum(_)
+                    | FieldType::Union(_)
+                    | FieldType::Literal(LiteralValue::String(_)) => {
+                        format!("Partial<Record<{k}, {v}>>")
+                    }
                     _ => format!("Record<{k}, {v}>"),
                 }
             }

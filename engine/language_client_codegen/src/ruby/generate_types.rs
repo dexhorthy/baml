@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 
 use anyhow::Result;
+use baml_types::LiteralValue;
 use itertools::Itertools;
 
 use crate::{field_type_attributes, type_check_attributes, TypeCheckAttributes};
@@ -175,7 +176,9 @@ impl ToTypeReferenceInTypeDefinition for FieldType {
                 "T::Hash[{}, {}]",
                 match key.as_ref() {
                     // For enums just default to strings.
-                    FieldType::Enum(_) => FieldType::string().to_type_ref(),
+                    FieldType::Enum(_)
+                    | FieldType::Literal(LiteralValue::String(_))
+                    | FieldType::Union(_) => FieldType::string().to_type_ref(),
                     _ => key.to_type_ref(),
                 },
                 value.to_partial_type_ref()

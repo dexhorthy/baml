@@ -71,6 +71,10 @@ describe "ruby<->baml integration tests" do
     res = b.InOutEnumMapKey(i1: {"A" => "A"}, i2: {"B" => "B"})
     assert_equal res['A'], "A"
     assert_equal res['B'], "B"
+
+    res = b.InOutLiteralMapKey(i1: {"one" => "1"}, i2: {"two" => "2"})
+    assert_equal res['one'], "1"
+    assert_equal res['two'], "2"
   end
 
   it "accepts subclass of baml type" do

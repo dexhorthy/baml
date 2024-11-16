@@ -1,4 +1,4 @@
-use baml_types::{BamlMediaType, FieldType, TypeValue};
+use baml_types::{BamlMediaType, FieldType, LiteralValue, TypeValue};
 
 use crate::field_type_attributes;
 
@@ -17,7 +17,9 @@ impl ToRuby for FieldType {
                 "T::Hash[{}, {}]",
                 match key.as_ref() {
                     // For enums just default to strings.
-                    FieldType::Enum(_) => FieldType::string().to_ruby(),
+                    FieldType::Enum(_)
+                    | FieldType::Literal(LiteralValue::String(_))
+                    | FieldType::Union(_) => FieldType::string().to_ruby(),
                     _ => key.to_ruby(),
                 },
                 value.to_ruby()

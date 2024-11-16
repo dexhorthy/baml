@@ -594,6 +594,13 @@ impl DatamodelError {
         Self::new(msg, span)
     }
 
+    pub fn new_type_not_allowed_as_map_key_error(span: Span) -> DatamodelError {
+        Self::new_validation_error(
+            "Maps may only have strings, enums or literal strings as keys",
+            span,
+        )
+    }
+
     pub fn span(&self) -> &Span {
         &self.span
     }

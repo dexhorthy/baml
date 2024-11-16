@@ -237,6 +237,12 @@ class TestAllInputs:
         assert res[MapKey.A] == "A"
         assert res[MapKey.B] == "B"
 
+    @pytest.mark.asyncio
+    async def test_literal_key_in_map(self):
+        res = await b.InOutLiteralMapKey({"one": "1"}, {"two": "2"})
+        assert res["one"] == "1"
+        assert res["two"] == "2"
+
 
 class MyCustomClass(NamedArgsSingleClass):
     date: datetime.datetime
