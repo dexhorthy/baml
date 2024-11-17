@@ -9,6 +9,7 @@ mod tests {
     use internal_baml_diagnostics::SourceFile;
 
     use super::*;
+    use crate::forms::r#type::{Type, BuiltinType};
     use crate::grammar::*;
 
     #[test]
@@ -31,9 +32,10 @@ mod tests {
         match class.fields.as_slice() {
             [field1, field2] => {
                 assert_eq!(field1.name.to_string().as_str(), "bar");
-                assert_eq!(field1.r#type.to_string().as_str(), "int");
+                assert!(matches!(field1.r#type, Type::Builtin{ builtin_type: BuiltinType::Int, ..} ));
                 assert_eq!(field2.name.to_string().as_str(), "baz");
-                assert_eq!(field2.r#type.to_string().as_str(), "string");
+                dbg!(&field2);
+                assert!(matches!(field2.r#type, Type::Builtin{ builtin_type: BuiltinType::String, ..} ));
             },
             _ => {panic!("Expected 2 fields");}
         }

@@ -1,8 +1,10 @@
 use internal_baml_diagnostics::Span;
 
 use crate::forms::identifier::Identifier;
+use crate::forms::r#type::Type;
 use crate::pos::WithPos;
 
+#[derive(Clone, Debug)]
 pub struct Class<T> {
     pub name: Identifier<T>,
     pub fields: Vec<Field<T>>,
@@ -19,9 +21,10 @@ impl WithPos for Class<Span> {
 }
 
 
+#[derive(Clone, Debug)]
 pub struct Field<T> {
     pub name: Identifier<T>,
-    pub r#type: Identifier<T>,
+    pub r#type: Type<T>,
     // attributes: Vec<Attribute<T>>,
     pub meta: T,
 }

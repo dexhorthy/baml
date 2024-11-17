@@ -5,7 +5,11 @@ grammar(
 use crate::forms::class::{Class, Field};
 use crate::pos::{mk_pos, empty_pos, WithPos};
 use crate::forms::identifier::Identifier;
+use crate::forms::r#type::{Type, BuiltinType};
+
 use internal_baml_diagnostics::{DatamodelError, Diagnostics, SourceFile, Span};
+
+use std::str::FromStr;
 
 
 WithPos<Rule>: Rule = <l: @L> <t: Rule> <r: @R> => t.with_pos(mk_pos(src_file, l, r));
@@ -59,14 +63,12 @@ Field: Field<Span> = {
 
 pub Type: Type<Span> = WithPos<BareType>;
 pub BareType: Type<Span> = {
-    <base:Identifier> => Type::Builtin {
-      builtin_type: BuiltinType::from_str(base).unwrap(),
-      meta: empty_pos()
+    <base:Identifier> => match BuiltinType::from_str(base.to_string().as_str()) {
+        Ok(builtin_type) => Type::Builtin { builtin_type, meta: empty_pos(src_file) },
+        Err(_) => Type::UserDefined { name: base }
     },
-    <base:Identifier> "[" "]" => {
-        let mut type_name = base.clone();
-        type_name.name.push_str("[]");
-        type_name
+    <base:Type> "[" "]" => {
+        Type::List { base_type: Box::new(base), meta: empty_pos(src_file) }
     }
 };
 
