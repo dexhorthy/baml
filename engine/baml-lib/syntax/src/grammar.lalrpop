@@ -3,31 +3,37 @@ grammar(
 );
 
 use crate::forms::class::{Class, Field};
-use crate::pos::{mk_pos, WithPos};
+use crate::pos::{mk_pos, empty_pos, WithPos};
 use crate::forms::identifier::Identifier;
 use internal_baml_diagnostics::{DatamodelError, Diagnostics, SourceFile, Span};
 
 
-// WithPos<Rule>: Rule = <l: @L> <t: Rule> <r: @R> => t.with_pos(mk_pos(src_id, l, r))
+WithPos<Rule>: Rule = <l: @L> <t: Rule> <r: @R> => t.with_pos(mk_pos(src_file, l, r));
 
-pub Identifier: Identifier<Span> = {
-    <l: @L> <s:r"[a-zA-Z][a-zA-Z0-9_]*"> <r: @R> => {
-        let span = mk_pos(l, r);
-        Identifier{name: s.to_string(), meta: span}
+pub Identifier: Identifier<Span> = WithPos<BareIdentifier>;
+
+BareIdentifier: Identifier<Span> = {
+    <s:r"[a-zA-Z][a-zA-Z0-9_]*"> => {
+        Identifier{name: s.to_string(), meta: empty_pos(src_file)}
     }
 };
 
+
+// The syntax for a Class definition.
+//
+// ```baml
 // class Foo {
 //   foo int
 //   bar string[]
 // }
+// ```
 pub Class: Class<Span> = {
-    "class" <name:Identifier> "{" <fields:FieldList> "}" => {
-        let span = <>.0..<>.2;
+    <l: @L> "class" <name:Identifier> "{" <fields:FieldList> "}" <r: @R> => {
+        let span = mk_pos(src_file, l,r);
         Class {
             name,
             fields,
-            span,
+            meta: span,
         }
     }
 };
@@ -41,23 +47,26 @@ FieldList: Vec<Field<Span>> = {
 };
 
 Field: Field<Span> = {
-    <name:Identifier> <type_:Type> => {
-        let span = <>.0..<>.1;
+    <l: @L> <name:Identifier> <type_:Type> <r: @R> => {
+        let span = mk_pos(src_file, l, r);
         Field {
             name,
-            type_,
-            span,
+            r#type: type_,
+            meta: span,
         }
     }
 };
 
-Type: Identifier<Span> = {
-    <base:Identifier> => base,
+pub Type: Type<Span> = WithPos<BareType>;
+pub BareType: Type<Span> = {
+    <base:Identifier> => Type::Builtin {
+      builtin_type: BuiltinType::from_str(base).unwrap(),
+      meta: empty_pos()
+    },
     <base:Identifier> "[" "]" => {
-        let span = <>.0..<>.2;
-        let mut type_name = base.0.clone();
-        type_name.push_str("[]");
-        Identifier(type_name, span)
+        let mut type_name = base.clone();
+        type_name.name.push_str("[]");
+        type_name
     }
 };
 

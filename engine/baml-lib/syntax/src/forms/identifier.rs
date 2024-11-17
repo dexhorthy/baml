@@ -2,6 +2,7 @@ use internal_baml_diagnostics::Span;
 
 use crate::pos::WithPos;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct Identifier<T> {
     pub name: String,
     pub meta: T,
@@ -13,6 +14,12 @@ impl WithPos for Identifier<Span> {
             meta: pos,
             ..self
         }
+    }
+}
+
+impl <T> std::fmt::Display for Identifier<T> {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        write!(fmt, "{}", self.name)
     }
 }
 
@@ -152,4 +159,4 @@ impl WithPos for Identifier<Span> {
 //         write!(f, "{}", self.to_string())
 //     }
 // }
-// 
+//

@@ -21,7 +21,7 @@ impl WithPos for Class<Span> {
 
 pub struct Field<T> {
     pub name: Identifier<T>,
-    pub base_type: Identifier<T>,
+    pub r#type: Identifier<T>,
     // attributes: Vec<Attribute<T>>,
     pub meta: T,
 }

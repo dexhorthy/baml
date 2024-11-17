@@ -18,6 +18,27 @@ mod tests {
         assert_eq!(identifier.name, "foo");
     }
 
+    #[test]
+    fn test_parse_class() {
+        let source_file = SourceFile::new_static("tmp.baml".into(), "");
+        let class = ClassParser::new().parse(&source_file, r#"
+          class Foo {
+            bar int
+            baz string
+          }
+        "#).unwrap();
+        assert_eq!(class.name.to_string().as_str(), "Foo");
+        match class.fields.as_slice() {
+            [field1, field2] => {
+                assert_eq!(field1.name.to_string().as_str(), "bar");
+                assert_eq!(field1.r#type.to_string().as_str(), "int");
+                assert_eq!(field2.name.to_string().as_str(), "baz");
+                assert_eq!(field2.r#type.to_string().as_str(), "string");
+            },
+            _ => {panic!("Expected 2 fields");}
+        }
+    }
+
 }
 
 // use internal_baml_diagnostics::{DatamodelError, DatamodelWarning, Diagnostics, Span};

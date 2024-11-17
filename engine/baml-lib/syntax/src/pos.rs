@@ -1,11 +1,17 @@
 use internal_baml_diagnostics::{SourceFile, Span};
 
-pub fn mk_pos(left: usize, right: usize) -> Span {
+use std::sync::Arc;
+
+pub fn mk_pos(source_file: &SourceFile, left: usize, right: usize) -> Span {
     Span::new(
-        SourceFile::new_static("todo.baml".into(), "todo"),
+        source_file.clone(),
         left,
         right,
     )
+}
+
+pub fn empty_pos(source_file: &SourceFile) -> Span {
+    mk_pos(source_file, 0,0)
 }
 
 pub trait WithPos {
