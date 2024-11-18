@@ -238,10 +238,16 @@ class TestAllInputs:
         assert res[MapKey.B] == "B"
 
     @pytest.mark.asyncio
-    async def test_literal_key_in_map(self):
-        res = await b.InOutLiteralMapKey({"one": "1"}, {"two": "2"})
+    async def test_literal_string_key_in_map(self):
+        res = await b.InOutLiteralStringMapKey({"one": "1"}, {"two": "2"})
         assert res["one"] == "1"
         assert res["two"] == "2"
+
+    @pytest.mark.asyncio
+    async def test_literal_int_key_in_map(self):
+        res = await b.InOutLiteralIntMapKey({1: "one"}, {2: "two"})
+        assert res[1] == "one"
+        assert res[2] == "two"
 
 
 class MyCustomClass(NamedArgsSingleClass):

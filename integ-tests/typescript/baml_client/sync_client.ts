@@ -1418,13 +1418,38 @@ export class BamlSyncClient {
     }
   }
   
-  InOutLiteralMapKey(
+  InOutLiteralIntMapKey(
+      i1: Partial<Record<1 | 2 | 3 | 4, string>>,i2: Partial<Record<1 | 2 | 3 | 4, string>>,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): Partial<Record<1 | 2 | 3 | 4, string>> {
+    try {
+    const raw = this.runtime.callFunctionSync(
+      "InOutLiteralIntMapKey",
+      {
+        "i1": i1,"i2": i2
+      },
+      this.ctx_manager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __baml_options__?.clientRegistry,
+    )
+    return raw.parsed() as Partial<Record<1 | 2 | 3 | 4, string>>
+    } catch (error: any) {
+      const bamlError = createBamlValidationError(error);
+      if (bamlError instanceof BamlValidationError) {
+        throw bamlError;
+      } else {
+        throw error;
+      }
+    }
+  }
+  
+  InOutLiteralStringMapKey(
       i1: Partial<Record<"one" | "two" | "three" | "four", string>>,i2: Partial<Record<"one" | "two" | "three" | "four", string>>,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
   ): Partial<Record<"one" | "two" | "three" | "four", string>> {
     try {
     const raw = this.runtime.callFunctionSync(
-      "InOutLiteralMapKey",
+      "InOutLiteralStringMapKey",
       {
         "i1": i1,"i2": i2
       },

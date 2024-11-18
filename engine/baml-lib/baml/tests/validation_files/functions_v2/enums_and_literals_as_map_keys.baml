@@ -4,13 +4,7 @@ enum MapKey {
   C
 }
 
-class Fields {
-  e map<MapKey, string>
-  l1 map<"literal", string>
-  l2 map<"one" | "two" | ("three" | "four"), string>
-}
-
-function InOutEnumKey(i1: map<MapKey, string>, i2: map<MapKey, string>) -> map<MapKey, string> {
+function InOutEnumMapKey(i1: map<MapKey, string>, i2: map<MapKey, string>) -> map<MapKey, string> {
   client "openai/gpt-4o"
   prompt #"
     Merge these: {{i1}} {{i2}}
@@ -19,10 +13,26 @@ function InOutEnumKey(i1: map<MapKey, string>, i2: map<MapKey, string>) -> map<M
   "#
 }
 
-function InOutLiteralKey(
+function InOutLiteralStringMapKey(
   i1: map<"one" | "two" | ("three" | "four"), string>, 
   i2: map<"one" | "two" | ("three" | "four"), string>
 ) -> map<"one" | "two" | ("three" | "four"), string> {
+  client "openai/gpt-4o"
+  prompt #"
+    Merge these:
+    
+    {{i1}}
+    
+    {{i2}}
+
+    {{ ctx.output_format }}
+  "#
+}
+
+function InOutLiteralIntMapKey(
+  i1: map<1 | 2 | (3 | 4), string>, 
+  i2: map<1 | 2 | (3 | 4), string>
+) -> map<1 | 2 | (3 | 4), string> {
   client "openai/gpt-4o"
   prompt #"
     Merge these:

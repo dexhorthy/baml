@@ -1312,7 +1312,30 @@ class BamlSyncClient:
       )
       return cast(Dict[types.MapKey, str], raw.cast_to(types, types))
     
-    def InOutLiteralMapKey(
+    def InOutLiteralIntMapKey(
+        self,
+        i1: Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str],i2: Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str],
+        baml_options: BamlCallOptions = {},
+    ) -> Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = self.__runtime.call_function_sync(
+        "InOutLiteralIntMapKey",
+        {
+          "i1": i1,"i2": i2,
+        },
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+      return cast(Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str], raw.cast_to(types, types))
+    
+    def InOutLiteralStringMapKey(
         self,
         i1: Dict[Union[Literal["one"], Literal["two"], Union[Literal["three"], Literal["four"]]], str],i2: Dict[Union[Literal["one"], Literal["two"], Union[Literal["three"], Literal["four"]]], str],
         baml_options: BamlCallOptions = {},
@@ -1325,7 +1348,7 @@ class BamlSyncClient:
       __cr__ = baml_options.get("client_registry", None)
 
       raw = self.__runtime.call_function_sync(
-        "InOutLiteralMapKey",
+        "InOutLiteralStringMapKey",
         {
           "i1": i1,"i2": i2,
         },
@@ -4381,7 +4404,38 @@ class BamlStreamClient:
         self.__ctx_manager.get(),
       )
     
-    def InOutLiteralMapKey(
+    def InOutLiteralIntMapKey(
+        self,
+        i1: Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str],i2: Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str],
+        baml_options: BamlCallOptions = {},
+    ) -> baml_py.BamlSyncStream[Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], Optional[str]], Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str]]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = self.__runtime.stream_function_sync(
+        "InOutLiteralIntMapKey",
+        {
+          "i1": i1,
+          "i2": i2,
+        },
+        None,
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+
+      return baml_py.BamlSyncStream[Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], Optional[str]], Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str]](
+        raw,
+        lambda x: cast(Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], Optional[str]], x.cast_to(types, partial_types)),
+        lambda x: cast(Dict[Union[Literal[1], Literal[2], Union[Literal[3], Literal[4]]], str], x.cast_to(types, types)),
+        self.__ctx_manager.get(),
+      )
+    
+    def InOutLiteralStringMapKey(
         self,
         i1: Dict[Union[Literal["one"], Literal["two"], Union[Literal["three"], Literal["four"]]], str],i2: Dict[Union[Literal["one"], Literal["two"], Union[Literal["three"], Literal["four"]]], str],
         baml_options: BamlCallOptions = {},
@@ -4394,7 +4448,7 @@ class BamlStreamClient:
       __cr__ = baml_options.get("client_registry", None)
 
       raw = self.__runtime.stream_function_sync(
-        "InOutLiteralMapKey",
+        "InOutLiteralStringMapKey",
         {
           "i1": i1,
           "i2": i2,

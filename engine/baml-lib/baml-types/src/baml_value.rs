@@ -16,6 +16,7 @@ pub enum BamlValue {
     Int(i64),
     Float(f64),
     Bool(bool),
+    // TODO: Is it possible to support int keys without converting to strings?
     Map(BamlMap<String, BamlValue>),
     List(Vec<BamlValue>),
     Media(BamlMedia),
@@ -638,7 +639,7 @@ impl Serialize for BamlValueWithMeta<Vec<ResponseCheck>> {
                     add_checks(&mut checked_value, cr)?;
                     checked_value.end()
                 }
-            },
+            }
             BamlValueWithMeta::Null(cr) => serialize_with_checks(&(), cr, serializer),
         }
     }
@@ -717,21 +718,23 @@ mod tests {
 
     #[test]
     fn test_serialize_class_checks() {
-        let baml_value: BamlValueWithMeta<Vec<ResponseCheck>> =
-            BamlValueWithMeta::Class(
-                "Foo".to_string(),
-                vec![
-                    ("foo".to_string(), BamlValueWithMeta::Int(1, vec![])),
-                    ("bar".to_string(), BamlValueWithMeta::String("hi".to_string(), vec![])),
-                ].into_iter().collect(),
-                vec![
-                    ResponseCheck {
-                        name: "bar_len_lt_foo".to_string(),
-                        expression: "this.bar|length < this.foo".to_string(),
-                        status: "failed".to_string()
-                    }
-                ]
-            );
+        let baml_value: BamlValueWithMeta<Vec<ResponseCheck>> = BamlValueWithMeta::Class(
+            "Foo".to_string(),
+            vec![
+                ("foo".to_string(), BamlValueWithMeta::Int(1, vec![])),
+                (
+                    "bar".to_string(),
+                    BamlValueWithMeta::String("hi".to_string(), vec![]),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+            vec![ResponseCheck {
+                name: "bar_len_lt_foo".to_string(),
+                expression: "this.bar|length < this.foo".to_string(),
+                status: "failed".to_string(),
+            }],
+        );
         let expected = serde_json::json!({
             "value": {"foo": 1, "bar": "hi"},
             "checks": {
@@ -748,29 +751,30 @@ mod tests {
 
     #[test]
     fn test_serialize_nested_class_checks() {
-
         // Prepare an object for wrapping.
-        let foo: BamlValueWithMeta<Vec<ResponseCheck>> =
-            BamlValueWithMeta::Class(
-                "Foo".to_string(),
-                vec![
-                    ("foo".to_string(), BamlValueWithMeta::Int(1, vec![])),
-                    ("bar".to_string(), BamlValueWithMeta::String("hi".to_string(), vec![])),
-                ].into_iter().collect(),
-                vec![
-                    ResponseCheck {
-                        name: "bar_len_lt_foo".to_string(),
-                        expression: "this.bar|length < this.foo".to_string(),
-                        status: "failed".to_string()
-                    }
-                ]
-            );
+        let foo: BamlValueWithMeta<Vec<ResponseCheck>> = BamlValueWithMeta::Class(
+            "Foo".to_string(),
+            vec![
+                ("foo".to_string(), BamlValueWithMeta::Int(1, vec![])),
+                (
+                    "bar".to_string(),
+                    BamlValueWithMeta::String("hi".to_string(), vec![]),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+            vec![ResponseCheck {
+                name: "bar_len_lt_foo".to_string(),
+                expression: "this.bar|length < this.foo".to_string(),
+                status: "failed".to_string(),
+            }],
+        );
 
         // Prepare the top-level value.
         let baml_value = BamlValueWithMeta::Class(
             "FooWrapper".to_string(),
             vec![("foo".to_string(), foo)].into_iter().collect(),
-            vec![]
+            vec![],
         );
         let expected = serde_json::json!({
             "foo": {
@@ -787,5 +791,4 @@ mod tests {
         let json = serde_json::to_value(baml_value).unwrap();
         assert_eq!(json, expected);
     }
-
 }
