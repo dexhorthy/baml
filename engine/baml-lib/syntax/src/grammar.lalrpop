@@ -93,7 +93,7 @@ OptionType: Type<Span> = {
     <t:TypeAtom> "?" => {
         Type::Option { base_type: Box::new(t), meta: empty_pos(src_file) }
     },
-    <l:@L> ! <r:@R> => {
+    <t:OptionType> <l:@L> "?" <r:@R> => {
         let span = mk_pos(src_file, l, r);
         diagnostics.push_error(DatamodelError::new_static("Can't ? a ?", span));
         Type::Error { meta: empty_pos(src_file )}

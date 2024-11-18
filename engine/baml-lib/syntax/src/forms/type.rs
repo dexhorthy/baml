@@ -123,15 +123,19 @@ mod tests {
 
         let int_option_option = p.parse(&source_file, &mut diagnostics, "int??").unwrap();
         dbg!(&diagnostics);
-        dbg!(&diagnostics);
-        match int_option_option {
-            Type::List { base_type, .. } => match *base_type {
-                Type::Option { base_type, .. } => {
-                    assert!(matches!( *base_type, Type::Builtin{ builtin_type: BuiltinType::Int, ..}));
+        dbg!(&int_option_option);
+        assert!(matches!(int_option_option, Type::Error{..}));
+
+        let simple_union = p.parse(&source_file, &mut diagnostics, "int | bool").unwrap();
+        match simple_union {
+            Type::Union { variants, .. } => match variants.as_slice() {
+                [variant1, variant2] => {
+                    assert!(matches!(variant1, Type::Builtin{builtin_type: BuiltinType::Int, ..}));
+                    assert!(matches!(variant2, Type::Builtin{builtin_type: BuiltinType::Bool, ..}));
                 },
-                _ => { panic!("Expected list") },
+                _ => { panic!("Expected 2 variants"); },
             },
-            _ => { panic!("Expected list") },
+            _ => { panic!("Expected union"); },
         }
     }
 }
