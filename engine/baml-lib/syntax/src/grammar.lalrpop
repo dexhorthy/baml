@@ -1,5 +1,6 @@
-grammar(
-    src_file: &SourceFile, // TODO: Replace this with a src_id.
+grammar<'err>(
+    src_file: &SourceFile,
+    diagnostics: &mut Diagnostics,
 );
 
 use crate::forms::class::{Class, Field};
@@ -61,14 +62,69 @@ Field: Field<Span> = {
     }
 };
 
+PipeSep<T>: Vec<T> = {
+    <mut v:(<T> "|")+> <e:T> => {
+        v.push(e);
+        v
+    }
+}
+
 pub Type: Type<Span> = WithPos<BareType>;
-pub BareType: Type<Span> = {
+
+BasicType: Type<Span> = {
     <base:Identifier> => match BuiltinType::from_str(base.to_string().as_str()) {
         Ok(builtin_type) => Type::Builtin { builtin_type, meta: empty_pos(src_file) },
         Err(_) => Type::UserDefined { name: base }
-    },
-    <base:Type> "[" "]" => {
-        Type::List { base_type: Box::new(base), meta: empty_pos(src_file) }
     }
+};
+
+ParenType: Type<Span> = {
+    "(" <t:Type> ")" => t,
+};
+
+TypeAtom: Type<Span> = {
+    BasicType,
+    ParenType,
+};
+
+// Question mark operator can only be applied to type atoms.
+// In other words, `int??` and `int[]?` are disallowed.
+OptionType: Type<Span> = {
+    <t:TypeAtom> "?" => {
+        Type::Option { base_type: Box::new(t), meta: empty_pos(src_file) }
+    },
+    <l:@L> ! <r:@R> => {
+        let span = mk_pos(src_file, l, r);
+        diagnostics.push_error(DatamodelError::new_static("Can't ? a ?", span));
+        Type::Error { meta: empty_pos(src_file )}
+    }
+};
+
+ListType: Type<Span> = {
+    <t:Type> "[" "]" => {
+        Type::List { base_type: Box::new(t), meta: empty_pos(src_file) }
+    }
+};
+
+UnionType: Type<Span> = {
+    <first:TypeAtom> "|" <rest:TypeAtom> => {
+        return Type::Union { variants: vec![first, rest], meta: empty_pos(src_file) };
+    },
+    <first:UnionType> "|" <rest:TypeAtom> => {
+        match first {
+            Type::Union { mut variants, meta } => {
+                variants.push(rest);
+                return Type::Union { variants, meta };
+            }
+            _ => unreachable!("The parser rules this out.")
+        }
+    }
+};
+
+pub BareType: Type<Span> = {
+    TypeAtom,
+    OptionType,
+    ListType,
+    UnionType,   
 };
 

@@ -6,7 +6,7 @@ lalrpop_mod!(pub grammar);
 
 #[cfg(test)]
 mod tests {
-    use internal_baml_diagnostics::SourceFile;
+    use internal_baml_diagnostics::{Diagnostics, SourceFile};
 
     use super::*;
     use crate::forms::r#type::{Type, BuiltinType};
@@ -15,14 +15,18 @@ mod tests {
     #[test]
     fn test_parse_identifier() {
         let source_file = SourceFile::new_static("tmp.baml".into(), "");
-        let identifier = IdentifierParser::new().parse(&source_file, "foo").unwrap();
+        let mut diagnostics = Diagnostics::new("tmp.baml".into());
+        let mut errors = Vec::new();
+        let identifier = IdentifierParser::new().parse(&source_file, &mut diagnostics, &mut errors, "foo").unwrap();
         assert_eq!(identifier.name, "foo");
     }
 
     #[test]
     fn test_parse_class() {
         let source_file = SourceFile::new_static("tmp.baml".into(), "");
-        let class = ClassParser::new().parse(&source_file, r#"
+        let mut diagnostics = Diagnostics::new("tmp.baml".into());
+        let mut errors = Vec::new();
+        let class = ClassParser::new().parse(&source_file, &mut diagnostics, &mut errors, r#"
           class Foo {
             bar int
             baz string
