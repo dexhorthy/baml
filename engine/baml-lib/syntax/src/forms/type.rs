@@ -85,14 +85,13 @@ mod tests {
         let p = TypeParser::new();
 
         let mut diagnostics = Diagnostics::new("tmp.baml".into());
-        let mut errors = Vec::new();
 
         assert!(matches!(
-            p.parse(&source_file, &mut diagnostics, &mut errors, "int").unwrap(),
+            p.parse(&source_file, &mut diagnostics, "int").unwrap(),
             Type::Builtin{ builtin_type: BuiltinType::Int, .. }
         ));
 
-        let int_list = p.parse(&source_file, &mut diagnostics, &mut errors, "int[]").unwrap();
+        let int_list = p.parse(&source_file, &mut diagnostics, "int[]").unwrap();
         match int_list {
             Type::List { base_type, .. } => {
                 assert!(matches!( *base_type, Type::Builtin{ builtin_type: BuiltinType::Int, ..}));
@@ -100,7 +99,7 @@ mod tests {
             _ => { panic!("Expected list") },
         }
 
-        let int_list_list = p.parse(&source_file, &mut diagnostics, &mut errors, "int[][]").unwrap();
+        let int_list_list = p.parse(&source_file, &mut diagnostics, "int[][]").unwrap();
         match int_list_list {
             Type::List { base_type, .. } => match *base_type {
                 Type::List { base_type, .. } => {
@@ -111,7 +110,7 @@ mod tests {
             _ => { panic!("Expected list") },
         }
 
-        let int_option_list_parens = p.parse(&source_file, &mut diagnostics, &mut errors, "(int?)[]").unwrap();
+        let int_option_list_parens = p.parse(&source_file, &mut diagnostics, "(int?)[]").unwrap();
         match int_option_list_parens {
             Type::List { base_type, .. } => match *base_type {
                 Type::Option { base_type, .. } => {
@@ -122,7 +121,7 @@ mod tests {
             _ => { panic!("Expected list") },
         }
 
-        let int_option_option = p.parse(&source_file, &mut diagnostics, &mut errors, "int??").unwrap();
+        let int_option_option = p.parse(&source_file, &mut diagnostics, "int??").unwrap();
         dbg!(&diagnostics);
         dbg!(&diagnostics);
         match int_option_option {

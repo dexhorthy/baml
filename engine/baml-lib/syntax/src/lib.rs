@@ -16,8 +16,7 @@ mod tests {
     fn test_parse_identifier() {
         let source_file = SourceFile::new_static("tmp.baml".into(), "");
         let mut diagnostics = Diagnostics::new("tmp.baml".into());
-        let mut errors = Vec::new();
-        let identifier = IdentifierParser::new().parse(&source_file, &mut diagnostics, &mut errors, "foo").unwrap();
+        let identifier = IdentifierParser::new().parse(&source_file, &mut diagnostics, "foo").unwrap();
         assert_eq!(identifier.name, "foo");
     }
 
@@ -25,8 +24,7 @@ mod tests {
     fn test_parse_class() {
         let source_file = SourceFile::new_static("tmp.baml".into(), "");
         let mut diagnostics = Diagnostics::new("tmp.baml".into());
-        let mut errors = Vec::new();
-        let class = ClassParser::new().parse(&source_file, &mut diagnostics, &mut errors, r#"
+        let class = ClassParser::new().parse(&source_file, &mut diagnostics, r#"
           class Foo {
             bar int
             baz string
