@@ -221,7 +221,7 @@ impl ArgCoercer {
             }),
             (FieldType::Class(name), _) => match value {
                 BamlValue::Class(n, _) if n == name => Ok(value.clone()),
-                BamlValue::Class(_, obj) | BamlValue::Map(obj) => match ir.find_class(name) {
+                BamlValue::Class(_, obj) /*BamlValue::Map(obj)*/ => match ir.find_class(name) {
                     Ok(c) => {
                         let mut fields = BamlMap::new();
 
