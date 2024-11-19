@@ -1,14 +1,49 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::{
     collections::{HashSet, VecDeque},
     fmt,
 };
 
+use indexmap::Equivalent;
 use serde::ser::SerializeMap;
 use serde::{de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::media::BamlMediaType;
 use crate::{BamlMap, BamlMedia, ResponseCheck};
+
+/// Supported map keys.
+///
+/// We only support strings and integers as map keys.
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BamlMapKey {
+    String(String),
+    Int(i64),
+}
+
+impl BamlMapKey {
+    pub fn string(s: &str) -> Self {
+        Self::String(s.into())
+    }
+}
+
+impl Display for BamlMapKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BamlMapKey::String(s) => write!(f, "{s}"),
+            BamlMapKey::Int(i) => write!(f, "{i}"),
+        }
+    }
+}
+
+impl Equivalent<BamlMapKey> for str {
+    fn equivalent(&self, key: &BamlMapKey) -> bool {
+        match key {
+            BamlMapKey::String(s) => self == s,
+            _ => false,
+        }
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum BamlValue {
@@ -16,8 +51,7 @@ pub enum BamlValue {
     Int(i64),
     Float(f64),
     Bool(bool),
-    // TODO: Is it possible to support int keys without converting to strings?
-    Map(BamlMap<String, BamlValue>),
+    Map(BamlMap<BamlMapKey, BamlValue>),
     List(Vec<BamlValue>),
     Media(BamlMedia),
     Enum(String, String),
@@ -135,13 +169,13 @@ impl BamlValue {
         matches!(self, BamlValue::Map(_))
     }
 
-    pub fn as_map(&self) -> Option<&BamlMap<String, BamlValue>> {
+    pub fn as_map(&self) -> Option<&BamlMap<BamlMapKey, BamlValue>> {
         match self {
             BamlValue::Map(m) => Some(m),
             _ => None,
         }
     }
-    pub fn as_map_owned(self) -> Option<BamlMap<String, BamlValue>> {
+    pub fn as_map_owned(self) -> Option<BamlMap<BamlMapKey, BamlValue>> {
         match self {
             BamlValue::Map(m) => Some(m),
             _ => None,
@@ -361,7 +395,7 @@ pub enum BamlValueWithMeta<T> {
     Int(i64, T),
     Float(f64, T),
     Bool(bool, T),
-    Map(BamlMap<String, BamlValueWithMeta<T>>, T),
+    Map(BamlMap<BamlMapKey, BamlValueWithMeta<T>>, T),
     List(Vec<BamlValueWithMeta<T>>, T),
     Media(BamlMedia, T),
     Enum(String, String, T),
@@ -458,7 +492,7 @@ impl<T> BamlValueWithMeta<T> {
             BamlValue::Class(_, items) => Map(
                 items
                     .iter()
-                    .map(|(k, v)| (k.clone(), Self::with_default_meta(v)))
+                    .map(|(k, v)| (BamlMapKey::String(k.clone()), Self::with_default_meta(v)))
                     .collect(),
                 T::default(),
             ),

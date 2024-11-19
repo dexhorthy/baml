@@ -1,6 +1,6 @@
 use baml_types::{
-    BamlMap, BamlValue, BamlValueWithMeta, Constraint, ConstraintLevel, FieldType, LiteralValue,
-    TypeValue,
+    BamlMap, BamlMapKey, BamlValue, BamlValueWithMeta, Constraint, ConstraintLevel, FieldType,
+    LiteralValue, TypeValue,
 };
 use core::result::Result;
 use std::{collections::VecDeque, path::PathBuf};
@@ -84,7 +84,10 @@ impl ArgCoercer {
                             };
 
                             for key in kv.keys() {
-                                if !vec!["file", "media_type"].contains(&key.as_str()) {
+                                if !["file", "media_type"]
+                                    .map(BamlMapKey::string)
+                                    .contains(&key)
+                                {
                                     scope.push_error(format!(
                                         "Invalid property `{}` on file {}: `media_type` is the only supported property",
                                         key,
@@ -118,7 +121,7 @@ impl ArgCoercer {
                                 None => None,
                             };
                             for key in kv.keys() {
-                                if !vec!["url", "media_type"].contains(&key.as_str()) {
+                                if !["url", "media_type"].map(BamlMapKey::string).contains(&key) {
                                     scope.push_error(format!(
                                         "Invalid property `{}` on url {}: `media_type` is the only supported property",
                                         key,
@@ -143,7 +146,10 @@ impl ArgCoercer {
                                 None => None,
                             };
                             for key in kv.keys() {
-                                if !vec!["base64", "media_type"].contains(&key.as_str()) {
+                                if !["base64", "media_type"]
+                                    .map(BamlMapKey::string)
+                                    .contains(&key)
+                                {
                                     scope.push_error(format!(
                                         "Invalid property `{}` on base64 {}: `media_type` is the only supported property",
                                         key,
@@ -315,7 +321,11 @@ impl ArgCoercer {
                         let target_baml_key = if matches!(**k, FieldType::Primitive(TypeValue::Int))
                             || is_union_of_literal_ints
                         {
-                            match key.parse::<i64>() {
+                            let BamlMapKey::String(str_int) = key else {
+                                todo!();
+                            };
+
+                            match str_int.parse::<i64>() {
                                 Ok(i) => BamlValue::Int(i),
                                 Err(e) => {
                                     failed_parsing_int_err = Some(key);
@@ -325,7 +335,7 @@ impl ArgCoercer {
                                 }
                             }
                         } else {
-                            BamlValue::String(key.clone())
+                            BamlValue::String(key.to_string())
                         };
 
                         let coerced_key = self.coerce_arg(ir, k, &target_baml_key, scope);
