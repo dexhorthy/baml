@@ -82,6 +82,7 @@ pub enum FieldType {
     Union(Vec<FieldType>),
     Tuple(Vec<FieldType>),
     Optional(Box<FieldType>),
+    Alias(String, Box<FieldType>),
     Constrained {
         base: Box<FieldType>,
         constraints: Vec<Constraint>,
@@ -92,11 +93,10 @@ pub enum FieldType {
 impl std::fmt::Display for FieldType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            FieldType::Enum(name) | FieldType::Class(name) => {
-                write!(f, "{}", name)
-            }
-            FieldType::Primitive(t) => write!(f, "{}", t),
-            FieldType::Literal(v) => write!(f, "{}", v),
+            FieldType::Enum(name) | FieldType::Class(name) => write!(f, "{name}"),
+            FieldType::Alias(name, _) => write!(f, "{name}"),
+            FieldType::Primitive(t) => write!(f, "{t}"),
+            FieldType::Literal(v) => write!(f, "{v}"),
             FieldType::Union(choices) => {
                 write!(
                     f,
@@ -167,83 +167,85 @@ impl FieldType {
     /// Consider renaming this to `is_assignable_to`.
     pub fn is_subtype_of(&self, other: &FieldType) -> bool {
         if self == other {
-            true
-        } else {
-            if let FieldType::Union(items) = other {
-                if items.iter().any(|item| self.is_subtype_of(item)) {
-                    return true;
-                }
+            return true;
+        }
+
+        if let FieldType::Union(items) = other {
+            if items.iter().any(|item| self.is_subtype_of(item)) {
+                return true;
             }
-            match (self, other) {
-                (FieldType::Primitive(TypeValue::Null), FieldType::Optional(_)) => true,
-                (FieldType::Optional(self_item), FieldType::Optional(other_item)) => {
-                    self_item.is_subtype_of(other_item)
-                }
-                (_, FieldType::Optional(t)) => self.is_subtype_of(t),
-                (FieldType::Optional(_), _) => false,
+        }
 
-                // Handle types that nest other types.
-                (FieldType::List(self_item), FieldType::List(other_item)) => {
-                    self_item.is_subtype_of(other_item)
-                }
-                (FieldType::List(_), _) => false,
-
-                (FieldType::Map(self_k, self_v), FieldType::Map(other_k, other_v)) => {
-                    other_k.is_subtype_of(self_k) && (**self_v).is_subtype_of(other_v)
-                }
-                (FieldType::Map(_, _), _) => false,
-
-                (
-                    FieldType::Constrained {
-                        base: self_base,
-                        constraints: self_cs,
-                    },
-                    FieldType::Constrained {
-                        base: other_base,
-                        constraints: other_cs,
-                    },
-                ) => self_base.is_subtype_of(other_base) && self_cs == other_cs,
-                (FieldType::Constrained { base, .. }, _) => base.is_subtype_of(other),
-                (_, FieldType::Constrained { base, .. }) => self.is_subtype_of(base),
-                (
-                    FieldType::Literal(LiteralValue::Bool(_)),
-                    FieldType::Primitive(TypeValue::Bool),
-                ) => true,
-                (FieldType::Literal(LiteralValue::Bool(_)), _) => {
-                    self.is_subtype_of(&FieldType::Primitive(TypeValue::Bool))
-                }
-                (
-                    FieldType::Literal(LiteralValue::Int(_)),
-                    FieldType::Primitive(TypeValue::Int),
-                ) => true,
-                (FieldType::Literal(LiteralValue::Int(_)), _) => {
-                    self.is_subtype_of(&FieldType::Primitive(TypeValue::Int))
-                }
-                (
-                    FieldType::Literal(LiteralValue::String(_)),
-                    FieldType::Primitive(TypeValue::String),
-                ) => true,
-                (FieldType::Literal(LiteralValue::String(_)), _) => {
-                    self.is_subtype_of(&FieldType::Primitive(TypeValue::String))
-                }
-
-                (FieldType::Union(self_items), _) => self_items
-                    .iter()
-                    .all(|self_item| self_item.is_subtype_of(other)),
-
-                (FieldType::Tuple(self_items), FieldType::Tuple(other_items)) => {
-                    self_items.len() == other_items.len()
-                        && self_items
-                            .iter()
-                            .zip(other_items)
-                            .all(|(self_item, other_item)| self_item.is_subtype_of(other_item))
-                }
-                (FieldType::Tuple(_), _) => false,
-
-                (FieldType::Primitive(_), _) => false,
-                (FieldType::Enum(_), _) => false,
-                (FieldType::Class(_), _) => false,
+        match (self, other) {
+            (FieldType::Primitive(TypeValue::Null), FieldType::Optional(_)) => true,
+            (FieldType::Optional(self_item), FieldType::Optional(other_item)) => {
+                self_item.is_subtype_of(other_item)
             }
+            (_, FieldType::Optional(t)) => self.is_subtype_of(t),
+            (FieldType::Optional(_), _) => false,
+
+            // Handle types that nest other types.
+            (FieldType::List(self_item), FieldType::List(other_item)) => {
+                self_item.is_subtype_of(other_item)
+            }
+            (FieldType::List(_), _) => false,
+
+            (FieldType::Map(self_k, self_v), FieldType::Map(other_k, other_v)) => {
+                other_k.is_subtype_of(self_k) && (**self_v).is_subtype_of(other_v)
+            }
+            (FieldType::Map(_, _), _) => false,
+
+            (
+                FieldType::Constrained {
+                    base: self_base,
+                    constraints: self_cs,
+                },
+                FieldType::Constrained {
+                    base: other_base,
+                    constraints: other_cs,
+                },
+            ) => self_base.is_subtype_of(other_base) && self_cs == other_cs,
+            (FieldType::Constrained { base, .. }, _) => base.is_subtype_of(other),
+            (_, FieldType::Constrained { base, .. }) => self.is_subtype_of(base),
+            (FieldType::Literal(LiteralValue::Bool(_)), FieldType::Primitive(TypeValue::Bool)) => {
+                true
+            }
+            (FieldType::Literal(LiteralValue::Bool(_)), _) => {
+                self.is_subtype_of(&FieldType::Primitive(TypeValue::Bool))
+            }
+            (FieldType::Literal(LiteralValue::Int(_)), FieldType::Primitive(TypeValue::Int)) => {
+                true
+            }
+            (FieldType::Literal(LiteralValue::Int(_)), _) => {
+                self.is_subtype_of(&FieldType::Primitive(TypeValue::Int))
+            }
+            (
+                FieldType::Literal(LiteralValue::String(_)),
+                FieldType::Primitive(TypeValue::String),
+            ) => true,
+            (FieldType::Literal(LiteralValue::String(_)), _) => {
+                self.is_subtype_of(&FieldType::Primitive(TypeValue::String))
+            }
+
+            (FieldType::Union(self_items), _) => self_items
+                .iter()
+                .all(|self_item| self_item.is_subtype_of(other)),
+
+            (FieldType::Tuple(self_items), FieldType::Tuple(other_items)) => {
+                self_items.len() == other_items.len()
+                    && self_items
+                        .iter()
+                        .zip(other_items)
+                        .all(|(self_item, other_item)| self_item.is_subtype_of(other_item))
+            }
+            // TODO: Can this cause infinite recursion?
+            // Should the final resolved type (following all the aliases) be
+            // included in the variant so that we skip recursion?
+            (FieldType::Alias(_, target), _) => target.is_subtype_of(other),
+            (FieldType::Tuple(_), _) => false,
+            (FieldType::Primitive(_), _) => false,
+            (FieldType::Enum(_), _) => false,
+            (FieldType::Class(_), _) => false,
         }
     }
 }

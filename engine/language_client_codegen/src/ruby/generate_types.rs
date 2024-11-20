@@ -85,7 +85,12 @@ impl<'ir> From<ClassWalker<'ir>> for RubyStruct<'ir> {
                 .elem
                 .static_fields
                 .iter()
-                .map(|f| (Cow::Borrowed(f.elem.name.as_str()), f.elem.r#type.elem.to_type_ref()))
+                .map(|f| {
+                    (
+                        Cow::Borrowed(f.elem.name.as_str()),
+                        f.elem.r#type.elem.to_type_ref(),
+                    )
+                })
                 .collect(),
         }
     }
@@ -136,6 +141,7 @@ impl ToTypeReferenceInTypeDefinition for FieldType {
         match self {
             FieldType::Class(name) => format!("Baml::PartialTypes::{}", name.clone()),
             FieldType::Enum(name) => format!("T.nilable(Baml::Types::{})", name.clone()),
+            FieldType::Alias(_, target) => todo!(),
             // TODO: Temporary solution until we figure out Ruby literals.
             FieldType::Literal(value) => value.literal_base_type().to_partial_type_ref(),
             // https://sorbet.org/docs/stdlib-generics
@@ -167,16 +173,12 @@ impl ToTypeReferenceInTypeDefinition for FieldType {
                     .join(", ")
             ),
             FieldType::Optional(inner) => inner.to_partial_type_ref(),
-            FieldType::Constrained{base,..} => {
-                match field_type_attributes(self) {
-                    Some(checks) => {
-                        let base_type_ref = base.to_partial_type_ref();
-                        format!("Baml::Checked[{base_type_ref}]")
-                    }
-                    None => {
-                        base.to_partial_type_ref()
-                    }
+            FieldType::Constrained { base, .. } => match field_type_attributes(self) {
+                Some(checks) => {
+                    let base_type_ref = base.to_partial_type_ref();
+                    format!("Baml::Checked[{base_type_ref}]")
                 }
+                None => base.to_partial_type_ref(),
             },
         }
     }

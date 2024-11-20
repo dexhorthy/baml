@@ -266,6 +266,7 @@ impl ToTypeReferenceInClientDefinition for FieldType {
                 }
             }
             FieldType::Class(name) => format!("{name}"),
+            FieldType::Alias(_, target) => todo!(),
             FieldType::List(inner) => match inner.as_ref() {
                 FieldType::Union(_) | FieldType::Optional(_) => {
                     format!("({})[]", inner.to_type_ref(ir))
@@ -295,17 +296,13 @@ impl ToTypeReferenceInClientDefinition for FieldType {
                     .join(", ")
             ),
             FieldType::Optional(inner) => format!("{} | null", inner.to_type_ref(ir)),
-            FieldType::Constrained{base,..} => {
-                match field_type_attributes(self) {
-                    Some(checks) => {
-                        let base_type_ref = base.to_type_ref(ir);
-                        let checks_type_ref = type_name_for_checks(&checks);
-                        format!("Checked<{base_type_ref},{checks_type_ref}>")
-                    }
-                    None => {
-                        base.to_type_ref(ir)
-                    }
+            FieldType::Constrained { base, .. } => match field_type_attributes(self) {
+                Some(checks) => {
+                    let base_type_ref = base.to_type_ref(ir);
+                    let checks_type_ref = type_name_for_checks(&checks);
+                    format!("Checked<{base_type_ref},{checks_type_ref}>")
                 }
+                None => base.to_type_ref(ir),
             },
         }
     }

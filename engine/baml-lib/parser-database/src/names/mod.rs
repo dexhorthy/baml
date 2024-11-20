@@ -23,6 +23,7 @@ pub(super) struct Names {
     /// Tests have their own namespace.
     pub(super) tests: HashMap<StringId, HashMap<StringId, TopId>>,
     pub(super) model_fields: HashMap<(ast::TypeExpId, StringId), ast::FieldId>,
+    pub(super) type_aliases: HashMap<ast::TypeExpId, Option<StringId>>,
     // pub(super) composite_type_fields: HashMap<(ast::CompositeTypeId, StringId), ast::FieldId>,
 }
 
@@ -93,6 +94,8 @@ pub(super) fn resolve_names(ctx: &mut Context<'_>) {
 
             (ast::TopId::TypeAlias(_), ast::Top::TypeAlias(type_alias)) => {
                 validate_type_alias_name(type_alias, ctx.diagnostics);
+
+                let type_alias_id = ctx.interner.intern(type_alias.name());
 
                 Some(either::Left(&mut names.tops))
             }

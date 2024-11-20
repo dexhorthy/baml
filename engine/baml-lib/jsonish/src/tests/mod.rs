@@ -24,6 +24,7 @@ use std::{
 
 use baml_types::BamlValue;
 use internal_baml_core::{
+    ast::Field,
     internal_baml_diagnostics::SourceFile,
     ir::{repr::IntermediateRepr, ClassWalker, EnumWalker, FieldType, IRHelper, TypeValue},
     validate,
@@ -231,6 +232,7 @@ fn relevant_data_models<'a>(
                     });
                 }
             }
+            (FieldType::Alias(_, _), _) => todo!(),
             (FieldType::Literal(_), _) => {}
             (FieldType::Primitive(_), _constraints) => {}
             (FieldType::Constrained { .. }, _) => {

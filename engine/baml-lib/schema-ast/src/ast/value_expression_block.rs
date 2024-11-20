@@ -64,7 +64,7 @@ pub struct BlockArgs {
     pub(crate) span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum ValueExprBlockType {
     Function,
     Client,

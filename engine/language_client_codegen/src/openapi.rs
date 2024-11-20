@@ -10,7 +10,10 @@ use internal_baml_core::ir::{
 use serde::Serialize;
 use serde_json::json;
 
-use crate::{dir_writer::{FileCollector, LanguageFeatures, RemoveDirBehavior}, field_type_attributes, TypeCheckAttributes};
+use crate::{
+    dir_writer::{FileCollector, LanguageFeatures, RemoveDirBehavior},
+    field_type_attributes, TypeCheckAttributes,
+};
 
 #[derive(Default)]
 pub(super) struct OpenApiLanguageFeatures {}
@@ -347,7 +350,9 @@ impl<'ir> TryFrom<(&'ir IntermediateRepr, &'_ crate::GeneratorArgs)> for OpenApi
 fn check() -> TypeSpecWithMeta {
     TypeSpecWithMeta {
         meta: TypeMetadata::default(),
-        type_spec: TypeSpec::Ref{ r#ref: "#components/schemas/Check".to_string() },
+        type_spec: TypeSpec::Ref {
+            r#ref: "#components/schemas/Check".to_string(),
+        },
     }
 }
 
@@ -357,13 +362,15 @@ fn check() -> TypeSpecWithMeta {
 fn type_def_for_checks(checks: TypeCheckAttributes) -> TypeSpecWithMeta {
     TypeSpecWithMeta {
         meta: TypeMetadata::default(),
-        type_spec: TypeSpec::Inline(
-            TypeDef::Class {
-                properties: checks.0.iter().map(|check_name| (check_name.clone(), check())).collect(),
-                required: checks.0.into_iter().collect(),
-                additional_properties: false,
-            }
-        )
+        type_spec: TypeSpec::Inline(TypeDef::Class {
+            properties: checks
+                .0
+                .iter()
+                .map(|check_name| (check_name.clone(), check()))
+                .collect(),
+            required: checks.0.into_iter().collect(),
+            additional_properties: false,
+        }),
     }
 }
 
@@ -534,6 +541,7 @@ impl<'ir> ToTypeReferenceInTypeDefinition<'ir> for FieldType {
                     r#ref: format!("#/components/schemas/{}", name),
                 },
             },
+            FieldType::Alias(_, _) => todo!(),
             FieldType::Literal(v) => TypeSpecWithMeta {
                 meta: TypeMetadata {
                     title: None,
@@ -631,26 +639,25 @@ impl<'ir> ToTypeReferenceInTypeDefinition<'ir> for FieldType {
                 // something i saw suggested doing this
                 type_spec
             }
-            FieldType::Constrained{base,..} => {
-                match field_type_attributes(self) {
-                    Some(checks) => {
-                        let base_type_ref = base.to_type_spec(ir)?;
-                        let checks_type_spec = type_def_for_checks(checks);
-                        TypeSpecWithMeta {
-                            meta: TypeMetadata::default(),
-                            type_spec: TypeSpec::Inline(
-                                TypeDef::Class {
-                                    properties: vec![("value".to_string(), base_type_ref),("checks".to_string(), checks_type_spec)].into_iter().collect(),
-                                    required: vec!["value".to_string(), "checks".to_string()],
-                                    additional_properties: false,
-                                }
-                            )
-                        }
-                    }
-                    None => {
-                        base.to_type_spec(ir)?
+            FieldType::Constrained { base, .. } => match field_type_attributes(self) {
+                Some(checks) => {
+                    let base_type_ref = base.to_type_spec(ir)?;
+                    let checks_type_spec = type_def_for_checks(checks);
+                    TypeSpecWithMeta {
+                        meta: TypeMetadata::default(),
+                        type_spec: TypeSpec::Inline(TypeDef::Class {
+                            properties: vec![
+                                ("value".to_string(), base_type_ref),
+                                ("checks".to_string(), checks_type_spec),
+                            ]
+                            .into_iter()
+                            .collect(),
+                            required: vec!["value".to_string(), "checks".to_string()],
+                            additional_properties: false,
+                        }),
                     }
                 }
+                None => base.to_type_spec(ir)?,
             },
         })
     }

@@ -36,7 +36,7 @@ mod names;
 mod tarjan;
 mod types;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 pub use coerce_expression::{coerce, coerce_array, coerce_opt};
 pub use internal_baml_schema_ast::ast;
@@ -131,6 +131,35 @@ impl ParserDatabase {
     }
 
     fn finalize_dependencies(&mut self, diag: &mut Diagnostics) {
+        // Fully resolve type aliases.
+        for (id, targets) in self.types.type_aliases.iter() {
+            let mut resolved = HashSet::new();
+            let mut queue = VecDeque::from_iter(targets.iter());
+
+            while let Some(target) = queue.pop_front() {
+                match self.find_type_by_str(target) {
+                    Some(TypeWalker::Class(_) | TypeWalker::Enum(_)) => {
+                        resolved.insert(target.to_owned());
+                    }
+                    // TODO: Cycles and recursive stuff.
+                    Some(TypeWalker::TypeAlias(alias)) => {
+                        let alias_id = alias.id;
+
+                        if let Some(already_resolved) =
+                            self.types.resolved_type_aliases.get_mut(&alias_id)
+                        {
+                            resolved.extend(already_resolved.iter().cloned());
+                        } else {
+                            queue.extend(&self.types.type_aliases[&alias_id])
+                        }
+                    }
+                    None => panic!("Type alias pointing to invalid type `{target}`"),
+                };
+            }
+
+            self.types.resolved_type_aliases.insert(*id, resolved);
+        }
+
         // NOTE: Class dependency cycles are already checked at
         // baml-lib/baml-core/src/validate/validation_pipeline/validations/cycle.rs
         //
@@ -203,7 +232,9 @@ impl ParserDatabase {
                             Some(walker.dependencies().iter().cloned())
                         }
                         Some(TypeWalker::Enum(_)) => None,
-                        Some(TypeWalker::TypeAlias(_)) => todo!(),
+                        Some(TypeWalker::TypeAlias(walker)) => {
+                            Some(self.types.resolved_type_aliases[&walker.id].iter().cloned())
+                        }
                         _ => panic!("Unknown class `{}`", f),
                     })
                     .flatten()

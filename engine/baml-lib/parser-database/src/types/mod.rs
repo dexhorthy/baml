@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
 
 use crate::coerce;
@@ -9,7 +9,7 @@ use indexmap::IndexMap;
 use internal_baml_diagnostics::Span;
 use internal_baml_prompt_parser::ast::{ChatBlock, PrinterBlock, Variable};
 use internal_baml_schema_ast::ast::{
-    self, Expression, FieldId, RawString, ValExpId, WithIdentifier, WithName, WithSpan,
+    self, Expression, FieldId, FieldType, RawString, ValExpId, WithIdentifier, WithName, WithSpan,
 };
 
 mod configurations;
@@ -32,6 +32,12 @@ pub(super) fn resolve_types(ctx: &mut Context<'_>) {
                 visit_class(idx, model, ctx);
             }
             (_, ast::Top::Class(_)) => unreachable!("Class misconfigured"),
+
+            (ast::TopId::TypeAlias(idx), ast::Top::TypeAlias(assignment)) => {
+                visit_type_alias(idx, assignment, ctx);
+            }
+            (_, ast::Top::TypeAlias(assignment)) => unreachable!("Type alias misconfigured"),
+
             (ast::TopId::TemplateString(idx), ast::Top::TemplateString(template_string)) => {
                 visit_template_string(idx, template_string, ctx)
             }
@@ -225,6 +231,50 @@ pub(super) struct Types {
     pub(super) class_dependencies: HashMap<ast::TypeExpId, HashSet<String>>,
     pub(super) enum_dependencies: HashMap<ast::TypeExpId, HashSet<String>>,
 
+    /// Graph of type aliases.
+    ///
+    /// A type alias can point to one or many different types (with a union).
+    ///
+    /// Base case is primitives:
+    ///
+    /// ```ignore
+    /// type Alias = int
+    /// ```
+    ///
+    /// In that case the type doesn't "point" to anything.
+    ///
+    /// Second case is classes, enums or other aliases:
+    ///
+    /// ```ignore
+    /// type ClassAlias = SomeClass
+    /// type EnumAlias = SomeEnum
+    /// type Alias = ClassAlias
+    /// ```
+    ///
+    /// Third, an alias can point to many of the above through unions:
+    ///
+    /// ```ignore
+    /// type Alias = SomeClass | EnumAlias
+    /// ```
+    ///
+    /// This graph stores the names of all the symbols that the type alias
+    /// points to.
+    pub(super) type_aliases: HashMap<ast::TypeExpId, HashSet<String>>,
+
+    /// Same as [`Self::type_aliases`] but without intermediate edges in the
+    /// graph.
+    ///
+    /// Pointers here point directly to the resolved type. Example:
+    ///
+    /// ```
+    /// type AliasOne = SomeClass
+    /// type AliasTwo = AliasOne
+    /// type AliasThree = AliasTwo
+    /// ```
+    ///
+    /// Contents would be `AliasThree -> SomeClass`.
+    pub(super) resolved_type_aliases: HashMap<ast::TypeExpId, HashSet<String>>,
+
     /// Strongly connected components of the dependency graph.
     ///
     /// Basically contains all the different cycles. This allows us to find a
@@ -334,6 +384,32 @@ fn visit_class<'db>(
         used_types.extend(input_deps.iter().map(|id| id.name().to_string()));
         used_types
     });
+}
+
+fn visit_type_alias<'db>(
+    alias_id: ast::TypeExpId,
+    assignment: &'db ast::Assignment,
+    ctx: &mut Context<'db>,
+) {
+    let targets = ctx
+        .types
+        .type_aliases
+        .entry(alias_id)
+        .or_insert(HashSet::new());
+
+    // Find all the symbols that the type alias points to.
+    let mut queue = VecDeque::from_iter([&assignment.value]);
+    while let Some(item) = queue.pop_front() {
+        match item {
+            FieldType::Symbol(..) => {
+                targets.insert(item.name());
+            }
+            FieldType::Union(_, items, ..) | FieldType::Tuple(_, items, ..) => {
+                queue.extend(items.iter());
+            }
+            _ => {}
+        }
+    }
 }
 
 fn visit_function<'db>(idx: ValExpId, function: &'db ast::ValueExprBlock, ctx: &mut Context<'db>) {
