@@ -139,9 +139,11 @@ impl ParsingContext<'_> {
         }
     }
 
-    pub(crate) fn error_map_must_have_string_key(&self, key_type: &FieldType) -> ParsingError {
+    pub(crate) fn error_map_must_have_supported_key(&self, key_type: &FieldType) -> ParsingError {
         ParsingError {
-            reason: format!("Maps may only have strings for keys, but got {}", key_type),
+            reason: format!(
+                "Maps may only have strings, enums or literal strings for keys, but got {key_type}"
+            ),
             scope: self.scope.clone(),
             causes: vec![],
         }

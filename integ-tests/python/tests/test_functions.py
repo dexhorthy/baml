@@ -38,6 +38,7 @@ from ..baml_client.types import (
     all_succeeded,
     BlockConstraintForParam,
     NestedBlockConstraintForParam,
+    MapKey,
 )
 import baml_client.types as types
 from ..baml_client.tracing import trace, set_tags, flush, on_log_event
@@ -229,6 +230,23 @@ class TestAllInputs:
     async def test_single_map_string_to_map(self):
         res = await b.TestFnNamedArgsSingleMapStringToMap({"lorem": {"word": "ipsum"}})
         assert res["lorem"]["word"] == "ipsum"
+
+    @pytest.mark.asyncio
+    async def test_enum_key_in_map(self):
+        res = await b.InOutEnumMapKey({MapKey.A: "A"}, {MapKey.B: "B"})
+        assert res[MapKey.A] == "A"
+        assert res[MapKey.B] == "B"
+
+    @pytest.mark.asyncio
+    async def test_literal_string_union_key_in_map(self):
+        res = await b.InOutLiteralStringUnionMapKey({"one": "1"}, {"two": "2"})
+        assert res["one"] == "1"
+        assert res["two"] == "2"
+
+    @pytest.mark.asyncio
+    async def test_single_literal_string_key_in_map(self):
+        res = await b.InOutSingleLiteralStringMapKey({"key": "1"})
+        assert res["key"] == "1"
 
 
 class MyCustomClass(NamedArgsSingleClass):

@@ -1,5 +1,9 @@
-use baml_types::TypeValue;
+use std::collections::VecDeque;
+
+use baml_types::{LiteralValue, TypeValue};
+use either::Either;
 use internal_baml_diagnostics::{DatamodelError, DatamodelWarning, Span};
+use internal_baml_parser_database::TypeWalker;
 use internal_baml_schema_ast::ast::{
     Argument, Attribute, Expression, FieldArity, FieldType, Identifier, WithName, WithSpan,
 };
@@ -56,12 +60,53 @@ fn validate_type_allowed(ctx: &mut Context<'_>, field_type: &FieldType) {
                     field_type.span().clone(),
                 ));
             }
+
             match &kv_types.0 {
+                // String key.
                 FieldType::Primitive(FieldArity::Required, TypeValue::String, ..) => {}
-                key_type => {
-                    ctx.push_error(DatamodelError::new_validation_error(
-                        "Maps may only have strings as keys",
-                        key_type.span().clone(),
+
+                // Enum key.
+                FieldType::Symbol(FieldArity::Required, identifier, _)
+                    if ctx
+                        .db
+                        .find_type(identifier)
+                        .is_some_and(|t| matches!(t, TypeWalker::Enum(_))) => {}
+
+                // Literal string key.
+                FieldType::Literal(FieldArity::Required, LiteralValue::String(_), ..) => {}
+
+                // Literal string union.
+                FieldType::Union(FieldArity::Required, items, ..) => {
+                    let mut queue = VecDeque::from_iter(items.iter());
+
+                    while let Some(item) = queue.pop_front() {
+                        match item {
+                            // Ok, literal string.
+                            FieldType::Literal(
+                                FieldArity::Required,
+                                LiteralValue::String(_),
+                                ..,
+                            ) => {}
+
+                            // Nested union, "recurse" but it's iterative.
+                            FieldType::Union(FieldArity::Required, nested, ..) => {
+                                queue.extend(nested.iter());
+                            }
+
+                            other => {
+                                ctx.push_error(
+                                    DatamodelError::new_type_not_allowed_as_map_key_error(
+                                        other.span().clone(),
+                                    ),
+                                );
+                            }
+                        }
+                    }
+                }
+
+                other => {
+                    ctx.push_error(DatamodelError::new_type_not_allowed_as_map_key_error(
+                        other.span().clone(),
                     ));
                 }
             }

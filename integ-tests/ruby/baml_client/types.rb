@@ -78,6 +78,8 @@ module Baml
       end
     end
     class EnumOutput < T::Enum
+      # An enum with three values,
+      # ONE, TWO and THREE.
       enums do
         ONE = new("ONE")
         TWO = new("TWO")
@@ -89,6 +91,13 @@ module Baml
         SPORTS = new("SPORTS")
         MUSIC = new("MUSIC")
         READING = new("READING")
+      end
+    end
+    class MapKey < T::Enum
+      enums do
+        A = new("A")
+        B = new("B")
+        C = new("C")
       end
     end
     class NamedArgsSingleEnum < T::Enum
@@ -735,8 +744,12 @@ module Baml
         @props = props
       end
     end
+    # A Martian organism with an age.
+    # Such a nice type.
     class Martian < T::Struct
       include Baml::Sorbet::Struct
+      # The age of the Martian in Mars years.
+      # So many Mars years.
       const :age, Baml::Checked[Integer]
 
       def initialize(props)

@@ -14,6 +14,7 @@ import {
   TestClassNested,
   onLogEvent,
   AliasedEnum,
+  MapKey,
 } from '../baml_client'
 import { RecursivePartialNull } from '../baml_client/async_client'
 import { b as b_sync } from '../baml_client/sync_client'
@@ -129,6 +130,23 @@ describe('Integ tests', () => {
     it('single map string to map', async () => {
       const res = await b.TestFnNamedArgsSingleMapStringToMap({ lorem: { word: 'ipsum' }, dolor: { word: 'sit' } })
       expect(res).toHaveProperty('lorem', { word: 'ipsum' })
+    })
+
+    it('enum key in map', async () => {
+      const res = await b.InOutEnumMapKey({ [MapKey.A]: 'A' }, { [MapKey.B]: 'B' })
+      expect(res).toHaveProperty(MapKey.A, 'A')
+      expect(res).toHaveProperty(MapKey.B, 'B')
+    })
+
+    it('literal string union key in map', async () => {
+      const res = await b.InOutLiteralStringUnionMapKey({ one: '1' }, { two: '2' })
+      expect(res).toHaveProperty('one', '1')
+      expect(res).toHaveProperty('two', '2')
+    })
+
+    it('single literal string key in map', async () => {
+      const res = await b.InOutSingleLiteralStringMapKey({ key: '1' })
+      expect(res).toHaveProperty('key', '1')
     })
   })
 
@@ -619,7 +637,7 @@ describe('Integ tests', () => {
 
   it('should raise an error when appropriate', async () => {
     await expect(async () => {
-      await b.TestCaching(111 as unknown as string, "fiction") // intentionally passing an int instead of a string
+      await b.TestCaching(111 as unknown as string, 'fiction') // intentionally passing an int instead of a string
     }).rejects.toThrow('BamlInvalidArgumentError')
 
     await expect(async () => {
@@ -873,6 +891,5 @@ describe('Integ tests', () => {
 
   afterAll(async () => {
     flush()
-  });
-
+  })
 })

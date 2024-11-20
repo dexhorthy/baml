@@ -278,7 +278,13 @@ impl IRHelper for IntermediateRepr {
                 match maybe_item_type {
                     Some(item_type) => {
                         let map_type = FieldType::Map(
-                            Box::new(FieldType::Primitive(TypeValue::String)),
+                            Box::new(match &field_type {
+                                FieldType::Map(key, _) => match key.as_ref() {
+                                    FieldType::Enum(name) => FieldType::Enum(name.clone()),
+                                    _ => FieldType::string(),
+                                },
+                                _ => FieldType::string(),
+                            }),
                             Box::new(item_type.clone()),
                         );
 

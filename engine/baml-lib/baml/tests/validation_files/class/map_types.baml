@@ -31,49 +31,55 @@ function InputAndOutput(i1: map<string, string>, i2: map<MapDummy, string>) -> m
   "#
 }
 
-// error: Error validating: Maps may only have strings as keys
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
 //   -->  class/map_types.baml:16
 //    | 
 // 15 | 
 // 16 |   b1 map<int, string>
 //    | 
-// error: Error validating: Maps may only have strings as keys
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
 //   -->  class/map_types.baml:17
 //    | 
 // 16 |   b1 map<int, string>
 // 17 |   b2 map<float, string>
 //    | 
-// error: Error validating: Maps may only have strings as keys
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
 //   -->  class/map_types.baml:18
 //    | 
 // 17 |   b2 map<float, string>
 // 18 |   b3 map<MapDummy, string>
 //    | 
-// error: Error validating: Maps may only have strings as keys
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
 //   -->  class/map_types.baml:19
 //    | 
 // 18 |   b3 map<MapDummy, string>
 // 19 |   b4 map<string?, string>
 //    | 
-// error: Error validating: Maps may only have strings as keys
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
 //   -->  class/map_types.baml:20
 //    | 
 // 19 |   b4 map<string?, string>
 // 20 |   b5 map<string | int, string>
 //    | 
-// error: Error validating: Maps may only have strings as keys
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
+//   -->  class/map_types.baml:20
+//    | 
+// 19 |   b4 map<string?, string>
+// 20 |   b5 map<string | int, string>
+//    | 
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
 //   -->  class/map_types.baml:23
 //    | 
 // 22 |   c1 string | map<string, string>
 // 23 |   c2 string | map<int, string>
 //    | 
-// error: Error validating: Maps may only have strings as keys
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
 //   -->  class/map_types.baml:24
 //    | 
 // 23 |   c2 string | map<int, string>
 // 24 |   c3 string | map<string?, string>
 //    | 
-// error: Error validating: Maps may only have strings as keys
+// error: Error validating: Maps may only have strings, enums or literal strings as keys
 //   -->  class/map_types.baml:27
 //    | 
 // 26 | 

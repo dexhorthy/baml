@@ -75,12 +75,13 @@ impl JsonParseState {
             | JsonCollection::BlockComment(s)
             | JsonCollection::SingleQuotedString(s)
             | JsonCollection::BacktickString(s)
+            | JsonCollection::TripleBacktickString { content: s, .. }
             | JsonCollection::UnquotedString(s)
             | JsonCollection::TrailingComment(s) => {
                 // println!("Consuming: {s} + {:?}", token);
                 s.push(token);
             }
-            _ => {
+            JsonCollection::Object(_, _) | JsonCollection::Array(_) => {
                 panic!("Unexpected token: {:?} in: {:?}", token, last);
             }
         }
@@ -172,6 +173,20 @@ impl JsonParseState {
                     counter = idx;
                     match c {
                         ',' => {
+                            // Check if we have just numeric values in the string so far.
+                            let Some((JsonCollection::UnquotedString(current_value), _)) =
+                                self.collection_stack.last()
+                            else {
+                                return Some(idx);
+                            };
+
+                            // current value could be a numeric looking things.
+                            let is_numeric = current_value.trim().parse::<f64>().is_ok();
+                            let is_bool = current_value.trim().eq_ignore_ascii_case("true")
+                                || current_value.trim().eq_ignore_ascii_case("false");
+                            let is_null = current_value.trim().eq_ignore_ascii_case("null");
+                            let is_possible_value = is_numeric || is_bool || is_null;
+
                             if let Some((_, next_c)) = next.peek() {
                                 match next_c {
                                     '\n' => {
@@ -180,6 +195,9 @@ impl JsonParseState {
                                     }
                                     ' ' => {
                                         log::debug!("Testing for comment after space + comma");
+                                        if is_possible_value {
+                                            return Some(idx);
+                                        }
                                         // If after the space we have "//" or "/*" or the beginning of a key, we'll close the string
                                         let mut buffer = ",".to_string();
                                         let mut anything_but_whitespace = false;
@@ -192,7 +210,7 @@ impl JsonParseState {
                                                 '\n' => {
                                                     if anything_but_whitespace {
                                                     } else {
-                                                        // Likely end of the key as the LLM generated a (', ' token by mistake)
+                                                        // Likely end of the key as the LLM generated a ", " token by mistake instead of a ","
                                                         // so drop the comma
                                                         log::debug!("Closing due to: newline after comma + space");
                                                         return Some(idx);
@@ -363,8 +381,8 @@ impl JsonParseState {
         mut next: Peekable<impl Iterator<Item = (usize, char)>>,
     ) -> Result<usize> {
         // println!("Processing: {:?}..{:?}", token, next.peek());
-        if let Some((last, _)) = self.collection_stack.last() {
-            match last {
+        match self.collection_stack.last() {
+            Some((last, _)) => match last {
                 JsonCollection::Object(_, _) => {
                     match token {
                         '}' => {
@@ -397,6 +415,10 @@ impl JsonParseState {
                 JsonCollection::TripleQuotedString(_) => {
                     // We should be expecting:
                     if token == '"' {
+                        // TODO: this logic is busted. peekable.peek() does not
+                        // advance the iterator (this is easily verified with
+                        // a unit test), but to fix this we need to do a bit of
+                        // refactoring, so for now we'll live with it.
                         let is_triple_quoted = match next.peek() {
                             Some((_, '"')) => match next.peek() {
                                 Some((_, '"')) => true,
@@ -485,6 +507,35 @@ impl JsonParseState {
                         _ => self.consume(token),
                     }
                 }
+                JsonCollection::TripleBacktickString { .. } => {
+                    // We could be expecting:
+                    // - A closing backtick
+                    // - A character
+                    if token == '`' {
+                        // TODO: this logic is busted. peekable.peek() does not
+                        // advance the iterator (this is easily verified with
+                        // a unit test), but to fix this we need to do a bit of
+                        // refactoring, so for now we'll live with it.
+                        let is_triple_quoted = match next.peek() {
+                            Some((_, '`')) => match next.peek() {
+                                Some((_, '`')) => true,
+                                None => true,
+                                _ => false,
+                            },
+                            None => true,
+                            _ => false,
+                        };
+
+                        if is_triple_quoted {
+                            self.complete_collection();
+                            Ok(3)
+                        } else {
+                            self.consume(token)
+                        }
+                    } else {
+                        self.consume(token)
+                    }
+                }
                 JsonCollection::BacktickString(_) => {
                     // We could be expecting:
                     // - A closing backtick
@@ -564,13 +615,14 @@ impl JsonParseState {
                         _ => self.consume(token),
                     }
                 }
+            },
+            None => {
+                // We could be expecting:
+                // - A value
+                // - Any leading whitespace
+                let preview = next.peekable();
+                self.find_any_starting_value(token, preview)
             }
-        } else {
-            // We could be expecting:
-            // - A value
-            // - Any leading whitespace
-            let preview = next.peekable();
-            self.find_any_starting_value(token, preview)
         }
     }
 
@@ -617,10 +669,29 @@ impl JsonParseState {
                 ));
             }
             '`' => {
-                self.collection_stack.push((
-                    JsonCollection::BacktickString(String::new()),
-                    Default::default(),
-                ));
+                // Peek if next 2 characters are also quotes
+                let is_triple_quoted = {
+                    next.next_if(|&(_, c)| c == '`')
+                        .and_then(|_| next.next_if(|&(_, c)| c == '`'))
+                        .is_some()
+                };
+
+                if is_triple_quoted {
+                    self.collection_stack.push((
+                        JsonCollection::TripleBacktickString {
+                            lang: None,
+                            path: None,
+                            content: String::new(),
+                        },
+                        Default::default(),
+                    ));
+                    return Ok(2);
+                } else {
+                    self.collection_stack.push((
+                        JsonCollection::BacktickString(String::new()),
+                        Default::default(),
+                    ))
+                }
             }
             '/' => {
                 // Could be a comment

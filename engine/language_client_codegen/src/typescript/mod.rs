@@ -4,6 +4,7 @@ mod typescript_language_features;
 use std::path::PathBuf;
 
 use anyhow::Result;
+use baml_types::LiteralValue;
 use generate_types::type_name_for_checks;
 use indexmap::IndexMap;
 use internal_baml_core::{
@@ -274,7 +275,17 @@ impl ToTypeReferenceInClientDefinition for FieldType {
                 _ => format!("{}[]", inner.to_type_ref(ir)),
             },
             FieldType::Map(key, value) => {
-                format!("Record<{}, {}>", key.to_type_ref(ir), value.to_type_ref(ir))
+                let k = key.to_type_ref(ir);
+                let v = value.to_type_ref(ir);
+
+                match key.as_ref() {
+                    FieldType::Enum(_)
+                    | FieldType::Union(_)
+                    | FieldType::Literal(LiteralValue::String(_)) => {
+                        format!("Partial<Record<{k}, {v}>>")
+                    }
+                    _ => format!("Record<{k}, {v}>"),
+                }
             }
             FieldType::Primitive(r#type) => r#type.to_typescript(),
             // In typescript we can just use literal values as type defs.

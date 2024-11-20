@@ -1,4 +1,4 @@
-use baml_types::{BamlMediaType, FieldType, TypeValue};
+use baml_types::{BamlMediaType, FieldType, LiteralValue, TypeValue};
 
 use crate::field_type_attributes;
 
@@ -14,10 +14,18 @@ impl ToRuby for FieldType {
             FieldType::Literal(value) => value.literal_base_type().to_ruby(),
             // https://sorbet.org/docs/stdlib-generics
             FieldType::List(inner) => format!("T::Array[{}]", inner.to_ruby()),
-            FieldType::Map(key, value) => {
-                format!("T::Hash[{}, {}]", key.to_ruby(), value.to_ruby())
-            }
-            FieldType::Primitive(r#type) => match r#type {
+            FieldType::Map(key, value) => format!(
+                "T::Hash[{}, {}]",
+                match key.as_ref() {
+                    // For enums just default to strings.
+                    FieldType::Enum(_)
+                    | FieldType::Literal(LiteralValue::String(_))
+                    | FieldType::Union(_) => FieldType::string().to_ruby(),
+                    _ => key.to_ruby(),
+                },
+                value.to_ruby()
+            ),
+            FieldType::Primitive(r#type) => String::from(match r#type {
                 // https://sorbet.org/docs/class-types
                 TypeValue::Bool => "T::Boolean",
                 TypeValue::Float => "Float",
@@ -27,8 +35,7 @@ impl ToRuby for FieldType {
                 // TODO: Create Baml::Types::Image
                 TypeValue::Media(BamlMediaType::Image) => "Baml::Image",
                 TypeValue::Media(BamlMediaType::Audio) => "Baml::Audio",
-            }
-            .to_string(),
+            }),
             FieldType::Union(inner) => format!(
                 // https://sorbet.org/docs/union-types
                 "T.any({})",

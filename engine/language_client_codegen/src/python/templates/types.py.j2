@@ -27,21 +27,35 @@ def all_succeeded(checks: Dict[CheckName, Check]) -> bool:
 {# Enums -#}
 {% for enum in enums %}
 class {{enum.name}}(str, Enum):
+    {%- if let Some(docstring) = enum.docstring %}
+    {{docstring}}
+    {%- endif %}
     {% if enum.values.is_empty() %}pass{% endif %}
-    {%- for value in enum.values %}
+    {%- for (value, m_docstring) in enum.values %}
     {{ value }} = "{{ value }}"
+    {%- if let Some(docstring) = m_docstring %}
+    {{ docstring }}
+    {%- endif %}
+
     {%- endfor %}
 {% endfor %}
 
 {#- Classes -#}
 {% for cls in classes %}
 class {{cls.name}}(BaseModel):
-    {% if cls.dynamic %}
+    {%- if let Some(docstring) = cls.docstring %}
+    {{docstring}}
+    {%- endif %}
+    {%- if cls.dynamic %}
     model_config = ConfigDict(extra='allow')
     {%- endif %}
-    {% if cls.fields.is_empty() && !cls.dynamic %}pass{% endif %}
+    {%- if cls.fields.is_empty() && !cls.dynamic %}pass{% endif %}
     
-    {%- for (name, type) in cls.fields %}
+    {%- for (name, type, m_docstring) in cls.fields %}
     {{name}}: {{type}}
+    {%- if let Some(docstring) = m_docstring %}
+    {{ docstring }}
+
+    {%- endif %}
     {%- endfor %}
 {% endfor %}
