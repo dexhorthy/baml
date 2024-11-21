@@ -259,7 +259,7 @@ pub(super) struct Types {
     ///
     /// This graph stores the names of all the symbols that the type alias
     /// points to.
-    pub(super) type_aliases: HashMap<ast::TypeExpId, HashSet<String>>,
+    pub(super) type_aliases: HashMap<ast::TypeAliasId, HashSet<String>>,
 
     /// Same as [`Self::type_aliases`] but without intermediate edges in the
     /// graph.
@@ -273,7 +273,7 @@ pub(super) struct Types {
     /// ```
     ///
     /// Contents would be `AliasThree -> SomeClass`.
-    pub(super) resolved_type_aliases: HashMap<ast::TypeExpId, HashSet<String>>,
+    pub(super) resolved_type_aliases: HashMap<ast::TypeAliasId, HashSet<String>>,
 
     /// Strongly connected components of the dependency graph.
     ///
@@ -387,7 +387,7 @@ fn visit_class<'db>(
 }
 
 fn visit_type_alias<'db>(
-    alias_id: ast::TypeExpId,
+    alias_id: ast::TypeAliasId,
     assignment: &'db ast::Assignment,
     ctx: &mut Context<'db>,
 ) {

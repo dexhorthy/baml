@@ -10,7 +10,7 @@ use internal_baml_schema_ast::ast::SubType;
 use internal_baml_schema_ast::ast::{self, ArgumentId, WithIdentifier, WithName, WithSpan};
 use std::collections::HashMap;
 
-/// A `class` declaration in the Prisma schema.
+/// Class walker with some helper methods to extract info from the parser DB.
 pub type ClassWalker<'db> = super::Walker<'db, ast::TypeExpId>;
 
 impl<'db> ClassWalker<'db> {
@@ -58,10 +58,12 @@ impl<'db> ClassWalker<'db> {
             })
     }
 
-
     /// Class docstring.
     pub fn get_documentation(&self) -> Option<String> {
-        self.ast_type_block().documentation.as_ref().map(|c| c.text.clone())
+        self.ast_type_block()
+            .documentation
+            .as_ref()
+            .map(|c| c.text.clone())
     }
 
     /// The name of the template string.

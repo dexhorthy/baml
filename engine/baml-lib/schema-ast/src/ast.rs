@@ -102,6 +102,20 @@ impl std::ops::Index<TypeExpId> for SchemaAst {
     }
 }
 
+/// An opaque identifier for a type alias in a schema AST.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TypeAliasId(u32);
+
+impl std::ops::Index<TypeAliasId> for SchemaAst {
+    type Output = Assignment;
+
+    fn index(&self, index: TypeAliasId) -> &Self::Output {
+        self.tops[index.0 as usize]
+            .as_type_alias_assignment()
+            .expect("expected type expression")
+    }
+}
+
 /// An opaque identifier for a model in a schema AST. Use the
 /// `schema[model_id]` syntax to resolve the id to an `ast::Model`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -143,7 +157,7 @@ pub enum TopId {
     Function(ValExpId),
 
     /// A type alias declaration.
-    TypeAlias(TypeExpId),
+    TypeAlias(TypeAliasId),
 
     /// A client declaration.
     Client(ValExpId),
@@ -221,7 +235,7 @@ impl std::ops::Index<TopId> for SchemaAst {
         let idx = match index {
             TopId::Enum(TypeExpId(idx)) => idx,
             TopId::Class(TypeExpId(idx)) => idx,
-            TopId::TypeAlias(TypeExpId(idx)) => idx,
+            TopId::TypeAlias(TypeAliasId(idx)) => idx,
             TopId::Function(ValExpId(idx)) => idx,
             TopId::TemplateString(TemplateStringId(idx)) => idx,
             TopId::Client(ValExpId(idx)) => idx,
@@ -239,7 +253,7 @@ fn top_idx_to_top_id(top_idx: usize, top: &Top) -> TopId {
         Top::Enum(_) => TopId::Enum(TypeExpId(top_idx as u32)),
         Top::Class(_) => TopId::Class(TypeExpId(top_idx as u32)),
         Top::Function(_) => TopId::Function(ValExpId(top_idx as u32)),
-        Top::TypeAlias(_) => TopId::TypeAlias(TypeExpId(top_idx as u32)),
+        Top::TypeAlias(_) => TopId::TypeAlias(TypeAliasId(top_idx as u32)),
         Top::Client(_) => TopId::Client(ValExpId(top_idx as u32)),
         Top::TemplateString(_) => TopId::TemplateString(TemplateStringId(top_idx as u32)),
         Top::Generator(_) => TopId::Generator(ValExpId(top_idx as u32)),

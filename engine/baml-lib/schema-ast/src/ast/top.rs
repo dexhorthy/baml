@@ -65,6 +65,13 @@ impl Top {
         }
     }
 
+    pub fn as_type_alias_assignment(&self) -> Option<&Assignment> {
+        match self {
+            Top::TypeAlias(assignment) => Some(assignment),
+            _ => None,
+        }
+    }
+
     pub fn as_template_string(&self) -> Option<&TemplateString> {
         match self {
             Top::TemplateString(t) => Some(t),

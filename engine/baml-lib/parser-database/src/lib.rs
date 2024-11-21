@@ -143,14 +143,12 @@ impl ParserDatabase {
                     }
                     // TODO: Cycles and recursive stuff.
                     Some(TypeWalker::TypeAlias(alias)) => {
-                        let alias_id = alias.id;
-
                         if let Some(already_resolved) =
-                            self.types.resolved_type_aliases.get_mut(&alias_id)
+                            self.types.resolved_type_aliases.get(&alias.id)
                         {
                             resolved.extend(already_resolved.iter().cloned());
                         } else {
-                            queue.extend(&self.types.type_aliases[&alias_id])
+                            queue.extend(&self.types.type_aliases[&alias.id])
                         }
                     }
                     None => panic!("Type alias pointing to invalid type `{target}`"),

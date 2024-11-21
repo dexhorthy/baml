@@ -414,8 +414,7 @@ impl WithRepr<FieldType> for ast::FieldType {
                 match db.find_type(idn) {
                     Some(TypeWalker::Class(class_walker)) => {
                         let base_class = FieldType::Class(class_walker.name().to_string());
-                        let maybe_constraints = class_walker.get_constraints(SubType::Class);
-                        match maybe_constraints {
+                        match class_walker.get_constraints(SubType::Class) {
                             Some(constraints) if constraints.len() > 0 => FieldType::Constrained {
                                 base: Box::new(base_class),
                                 constraints,
@@ -425,8 +424,7 @@ impl WithRepr<FieldType> for ast::FieldType {
                     }
                     Some(TypeWalker::Enum(enum_walker)) => {
                         let base_type = FieldType::Enum(enum_walker.name().to_string());
-                        let maybe_constraints = enum_walker.get_constraints(SubType::Enum);
-                        match maybe_constraints {
+                        match enum_walker.get_constraints(SubType::Enum) {
                             Some(constraints) if constraints.len() > 0 => FieldType::Constrained {
                                 base: Box::new(base_type),
                                 constraints,
@@ -434,7 +432,10 @@ impl WithRepr<FieldType> for ast::FieldType {
                             _ => base_type,
                         }
                     }
-                    Some(TypeWalker::TypeAlias(type_alias_walker)) => todo!(),
+                    Some(TypeWalker::TypeAlias(alias_walker)) => FieldType::Alias(
+                        alias_walker.name().to_owned(),
+                        Box::new(alias_walker.ast_field_type().repr(db)?),
+                    ),
                     None => return Err(anyhow!("Field type uses unresolvable local identifier")),
                 },
                 arity,
@@ -676,8 +677,14 @@ impl WithRepr<Enum> for EnumWalker<'_> {
     fn repr(&self, db: &ParserDatabase) -> Result<Enum> {
         Ok(Enum {
             name: self.name().to_string(),
-            values: self.values().map(|w| (w.node(db).map(|v| (v, w.documentation().map(|s| Docstring(s.to_string())))))).collect::<Result<Vec<_>,_>>()?,
-            docstring: self.get_documentation().map(|s| Docstring(s))
+            values: self
+                .values()
+                .map(|w| {
+                    (w.node(db)
+                        .map(|v| (v, w.documentation().map(|s| Docstring(s.to_string())))))
+                })
+                .collect::<Result<Vec<_>, _>>()?,
+            docstring: self.get_documentation().map(|s| Docstring(s)),
         })
     }
 }
@@ -722,7 +729,6 @@ impl WithRepr<Field> for FieldWalker<'_> {
             docstring: self.get_documentation().map(|s| Docstring(s)),
         })
     }
-
 }
 
 type ClassId = String;
@@ -774,7 +780,7 @@ impl WithRepr<Class> for ClassWalker<'_> {
                     .collect::<Result<Vec<_>>>()?,
                 None => Vec::new(),
             },
-            docstring: self.get_documentation().map(|s| Docstring(s))
+            docstring: self.get_documentation().map(|s| Docstring(s)),
         })
     }
 }
@@ -1223,7 +1229,8 @@ mod tests {
 
     #[test]
     fn test_docstrings() {
-        let ir = make_test_ir(r#"
+        let ir = make_test_ir(
+            r#"
           /// Foo class.
           class Foo {
             /// Bar field.
@@ -1243,7 +1250,9 @@ mod tests {
 
             THIRD
           }
-        "#).unwrap();
+        "#,
+        )
+        .unwrap();
 
         // Test class docstrings
         let foo = ir.find_class("Foo").as_ref().unwrap().clone().elem();
@@ -1252,7 +1261,7 @@ mod tests {
             [field1, field2] => {
                 assert_eq!(field1.elem.docstring.as_ref().unwrap().0, "Bar field.");
                 assert_eq!(field2.elem.docstring.as_ref().unwrap().0, "Baz field.");
-            },
+            }
             _ => {
                 panic!("Expected 2 fields");
             }
@@ -1260,7 +1269,10 @@ mod tests {
 
         // Test enum docstrings
         let test_enum = ir.find_enum("TestEnum").as_ref().unwrap().clone().elem();
-        assert_eq!(test_enum.docstring.as_ref().unwrap().0.as_str(), "Test enum.");
+        assert_eq!(
+            test_enum.docstring.as_ref().unwrap().0.as_str(),
+            "Test enum."
+        );
         match test_enum.values.as_slice() {
             [val1, val2, val3] => {
                 assert_eq!(val1.0.elem.0, "FIRST");
@@ -1269,7 +1281,7 @@ mod tests {
                 assert_eq!(val2.1.as_ref().unwrap().0, "Second variant.");
                 assert_eq!(val3.0.elem.0, "THIRD");
                 assert!(val3.1.is_none());
-            },
+            }
             _ => {
                 panic!("Expected 3 enum values");
             }
