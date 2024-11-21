@@ -259,6 +259,12 @@ pub(super) struct Types {
     ///
     /// This graph stores the names of all the symbols that the type alias
     /// points to.
+    ///
+    ///
+    /// TODO @antonio: Remove this and just store IDs. Then  get field type from
+    /// AST and resolve final type and store that in resolved_aliases below.
+    /// Change the type from hash set to field type because resolution requires
+    /// creating a type that does not even exist in the AST.
     pub(super) type_aliases: HashMap<ast::TypeAliasId, HashSet<String>>,
 
     /// Same as [`Self::type_aliases`] but without intermediate edges in the

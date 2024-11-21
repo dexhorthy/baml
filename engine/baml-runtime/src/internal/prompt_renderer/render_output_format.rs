@@ -363,7 +363,7 @@ fn relevant_data_models<'a>(
                     recursive_classes.insert(cls.to_owned());
                 }
             }
-            (FieldType::Alias(_, _), _) => todo!(),
+            (FieldType::Alias { .. }, _) => todo!(),
             (FieldType::Literal(_), _) => {}
             (FieldType::Primitive(_), _) => {}
             (FieldType::Constrained { .. }, _) => {

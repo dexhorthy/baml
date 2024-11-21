@@ -159,7 +159,7 @@ impl<'db> WithJsonSchema for FieldType {
             FieldType::Class(name) | FieldType::Enum(name) => json!({
                 "$ref": format!("#/definitions/{}", name),
             }),
-            FieldType::Alias(_, target) => todo!(),
+            FieldType::Alias { .. } => todo!(),
             FieldType::Literal(v) => json!({
                 "const": v.to_string(),
             }),

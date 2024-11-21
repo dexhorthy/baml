@@ -432,10 +432,11 @@ impl WithRepr<FieldType> for ast::FieldType {
                             _ => base_type,
                         }
                     }
-                    Some(TypeWalker::TypeAlias(alias_walker)) => FieldType::Alias(
-                        alias_walker.name().to_owned(),
-                        Box::new(alias_walker.ast_field_type().repr(db)?),
-                    ),
+                    Some(TypeWalker::TypeAlias(alias_walker)) => FieldType::Alias {
+                        name: alias_walker.name().to_owned(),
+                        target: Box::new(alias_walker.ast_field_type().repr(db)?),
+                        resolution: Box::new(FieldType::int()), // TODO
+                    },
                     None => return Err(anyhow!("Field type uses unresolvable local identifier")),
                 },
                 arity,

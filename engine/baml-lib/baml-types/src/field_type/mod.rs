@@ -82,7 +82,14 @@ pub enum FieldType {
     Union(Vec<FieldType>),
     Tuple(Vec<FieldType>),
     Optional(Box<FieldType>),
-    Alias(String, Box<FieldType>),
+    Alias {
+        /// Name of the alias.
+        name: String,
+        /// Type that the alias points to.
+        target: Box<FieldType>,
+        /// Final resolved type (an alias can point to other aliases).
+        resolution: Box<FieldType>,
+    },
     Constrained {
         base: Box<FieldType>,
         constraints: Vec<Constraint>,
@@ -94,7 +101,7 @@ impl std::fmt::Display for FieldType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FieldType::Enum(name) | FieldType::Class(name) => write!(f, "{name}"),
-            FieldType::Alias(name, _) => write!(f, "{name}"),
+            FieldType::Alias { name, .. } => write!(f, "{name}"),
             FieldType::Primitive(t) => write!(f, "{t}"),
             FieldType::Literal(v) => write!(f, "{v}"),
             FieldType::Union(choices) => {
@@ -241,7 +248,7 @@ impl FieldType {
             // TODO: Can this cause infinite recursion?
             // Should the final resolved type (following all the aliases) be
             // included in the variant so that we skip recursion?
-            (FieldType::Alias(_, target), _) => target.is_subtype_of(other),
+            (FieldType::Alias { target, .. }, _) => target.is_subtype_of(other),
             (FieldType::Tuple(_), _) => false,
             (FieldType::Primitive(_), _) => false,
             (FieldType::Enum(_), _) => false,
