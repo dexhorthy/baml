@@ -11,25 +11,16 @@ impl<'db> TypeAliasWalker<'db> {
         &self.db.ast[self.id].identifier.name()
     }
 
-    /// Returns a set containing the names of the types aliased by `self`.
-    ///
-    /// Note that the parser DB must be populated for this method to work.
-    pub fn targets(&self) -> &'db HashSet<String> {
-        &self.db.types.type_aliases[&self.id]
-    }
-
-    /// Returns a set containing the final resolution of the type alias.
-    ///
-    /// If the set is empty it just means that the type resolves to primitives
-    /// instead of symbols.
-    ///
-    /// Parser DB must be populated before calling this method.
-    pub fn resolved(&self) -> &'db HashSet<String> {
-        &self.db.types.resolved_type_aliases[&self.id]
-    }
-
-    /// Returns the field type of the aliased type.
-    pub fn ast_field_type(&self) -> &'db FieldType {
+    /// Returns the field type that the alias points to.
+    pub fn target(&self) -> &'db FieldType {
         &self.db.ast[self.id].value
+    }
+
+    /// Returns a "virtual" type that represents the fully resolved alias.
+    ///
+    /// Since an alias can point to other aliases we might have to create a
+    /// type that does not exist in the AST.
+    pub fn resolved(&self) -> &'db FieldType {
+        &self.db.types.resolved_type_aliases[&self.id]
     }
 }

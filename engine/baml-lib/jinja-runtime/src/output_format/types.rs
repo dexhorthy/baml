@@ -333,7 +333,9 @@ impl OutputFormatContent {
 
                     Some(format!("Answer in JSON using this {type_prefix}:{end}"))
                 }
-                FieldType::Alias(_, _) => todo!(),
+                FieldType::Alias { resolution, .. } => {
+                    auto_prefix(&resolution, options, output_format_content)
+                }
                 FieldType::List(_) => Some(String::from(
                     "Answer with a JSON Array using this schema:\n",
                 )),
@@ -482,7 +484,9 @@ impl OutputFormatContent {
                 }
                 .to_string()
             }
-            FieldType::Alias(_, _) => todo!(),
+            FieldType::Alias { resolution, .. } => {
+                self.inner_type_render(options, &resolution, render_state, group_hoisted_literals)?
+            }
             FieldType::List(inner) => {
                 let is_recursive = match inner.as_ref() {
                     FieldType::Class(nested_class) => self.recursive_classes.contains(nested_class),

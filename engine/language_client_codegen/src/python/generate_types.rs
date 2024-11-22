@@ -7,7 +7,8 @@ use crate::{field_type_attributes, type_check_attributes, TypeCheckAttributes};
 
 use super::python_language_features::ToPython;
 use internal_baml_core::ir::{
-    repr::{Docstring, IntermediateRepr}, ClassWalker, EnumWalker, FieldType, IRHelper,
+    repr::{Docstring, IntermediateRepr},
+    ClassWalker, EnumWalker, FieldType, IRHelper,
 };
 
 #[derive(askama::Template)]
@@ -39,7 +40,6 @@ struct PythonClass<'ir> {
     fields: Vec<(Cow<'ir, str>, String, Option<String>)>,
     dynamic: bool,
 }
-
 
 #[derive(askama::Template)]
 #[template(path = "partial_types.py.j2", escape = "none")]
@@ -93,9 +93,14 @@ impl<'ir> From<EnumWalker<'ir>> for PythonEnum<'ir> {
                 .elem
                 .values
                 .iter()
-                .map(|v| (v.0.elem.0.as_str(), v.1.as_ref().map(|d| render_docstring(d))))
+                .map(|v| {
+                    (
+                        v.0.elem.0.as_str(),
+                        v.1.as_ref().map(|d| render_docstring(d)),
+                    )
+                })
                 .collect(),
-            docstring: e.item.elem.docstring.as_ref().map(|s| render_docstring(s))
+            docstring: e.item.elem.docstring.as_ref().map(|s| render_docstring(s)),
         }
     }
 }
@@ -184,7 +189,6 @@ pub fn type_name_for_checks(checks: &TypeCheckAttributes) -> String {
     format!["Literal[{check_names}]"]
 }
 
-
 /// Returns the Python `Literal` representation of `self`.
 pub fn to_python_literal(literal: &LiteralValue) -> String {
     // Python bools are a little special...
@@ -220,7 +224,7 @@ impl ToTypeReferenceInTypeDefinition for FieldType {
                     format!("\"{name}\"")
                 }
             }
-            FieldType::Alias(_, _) => todo!(),
+            FieldType::Alias { resolution, .. } => resolution.to_type_ref(ir),
             FieldType::Literal(value) => to_python_literal(value),
             FieldType::Class(name) => format!("\"{name}\""),
             FieldType::List(inner) => format!("List[{}]", inner.to_type_ref(ir)),
@@ -276,7 +280,7 @@ impl ToTypeReferenceInTypeDefinition for FieldType {
                     format!("Optional[types.{name}]")
                 }
             }
-            FieldType::Alias(_, _) => todo!(),
+            FieldType::Alias { resolution, .. } => resolution.to_partial_type_ref(ir, wrapped),
             FieldType::Literal(value) => to_python_literal(value),
             FieldType::List(inner) => format!("List[{}]", inner.to_partial_type_ref(ir, true)),
             FieldType::Map(key, value) => {

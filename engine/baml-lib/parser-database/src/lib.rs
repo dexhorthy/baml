@@ -113,8 +113,6 @@ impl ParserDatabase {
         // First pass: resolve names.
         names::resolve_names(&mut ctx);
 
-        // Return early on name resolution errors.
-
         // Second pass: resolve top-level items and field types.
         types::resolve_types(&mut ctx);
 
@@ -131,33 +129,6 @@ impl ParserDatabase {
     }
 
     fn finalize_dependencies(&mut self, diag: &mut Diagnostics) {
-        // Fully resolve type aliases.
-        for (id, targets) in self.types.type_aliases.iter() {
-            let mut resolved = HashSet::new();
-            let mut queue = VecDeque::from_iter(targets.iter());
-
-            while let Some(target) = queue.pop_front() {
-                match self.find_type_by_str(target) {
-                    Some(TypeWalker::Class(_) | TypeWalker::Enum(_)) => {
-                        resolved.insert(target.to_owned());
-                    }
-                    // TODO: Cycles and recursive stuff.
-                    Some(TypeWalker::TypeAlias(alias)) => {
-                        if let Some(already_resolved) =
-                            self.types.resolved_type_aliases.get(&alias.id)
-                        {
-                            resolved.extend(already_resolved.iter().cloned());
-                        } else {
-                            queue.extend(&self.types.type_aliases[&alias.id])
-                        }
-                    }
-                    None => panic!("Type alias pointing to invalid type `{target}`"),
-                };
-            }
-
-            self.types.resolved_type_aliases.insert(*id, resolved);
-        }
-
         // NOTE: Class dependency cycles are already checked at
         // baml-lib/baml-core/src/validate/validation_pipeline/validations/cycle.rs
         //
@@ -217,8 +188,10 @@ impl ParserDatabase {
                             Some(walker.dependencies().iter().cloned())
                         }
                         Some(TypeWalker::Enum(_)) => None,
-                        Some(TypeWalker::TypeAlias(_)) => None,
-                        _ => panic!("Unknown class `{}`", f),
+                        // TODO: Alias can point to classes enums, unions...
+                        // what do we do here?
+                        Some(TypeWalker::TypeAlias(walker)) => None,
+                        _ => panic!("Unknown class `{f}`"),
                     })
                     .flatten()
                     .collect::<HashSet<_>>();
@@ -230,9 +203,9 @@ impl ParserDatabase {
                             Some(walker.dependencies().iter().cloned())
                         }
                         Some(TypeWalker::Enum(_)) => None,
-                        Some(TypeWalker::TypeAlias(walker)) => {
-                            Some(self.types.resolved_type_aliases[&walker.id].iter().cloned())
-                        }
+                        // TODO: Alias can point to classes enums, unions...
+                        // what do we do here?
+                        Some(TypeWalker::TypeAlias(walker)) => None,
                         _ => panic!("Unknown class `{}`", f),
                     })
                     .flatten()

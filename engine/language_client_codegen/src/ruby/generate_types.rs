@@ -168,7 +168,7 @@ impl ToTypeReferenceInTypeDefinition for FieldType {
         match self {
             FieldType::Class(name) => format!("Baml::PartialTypes::{}", name.clone()),
             FieldType::Enum(name) => format!("T.nilable(Baml::Types::{})", name.clone()),
-            FieldType::Alias(_, target) => todo!(),
+            FieldType::Alias { resolution, .. } => resolution.to_partial_type_ref(),
             // TODO: Temporary solution until we figure out Ruby literals.
             FieldType::Literal(value) => value.literal_base_type().to_partial_type_ref(),
             // https://sorbet.org/docs/stdlib-generics

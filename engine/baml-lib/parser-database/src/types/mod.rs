@@ -231,55 +231,23 @@ pub(super) struct Types {
     pub(super) class_dependencies: HashMap<ast::TypeExpId, HashSet<String>>,
     pub(super) enum_dependencies: HashMap<ast::TypeExpId, HashSet<String>>,
 
-    /// Graph of type aliases.
+    /// Fully resolved type aliases.
     ///
-    /// A type alias can point to one or many different types (with a union).
-    ///
-    /// Base case is primitives:
-    ///
-    /// ```ignore
-    /// type Alias = int
-    /// ```
-    ///
-    /// In that case the type doesn't "point" to anything.
-    ///
-    /// Second case is classes, enums or other aliases:
-    ///
-    /// ```ignore
-    /// type ClassAlias = SomeClass
-    /// type EnumAlias = SomeEnum
-    /// type Alias = ClassAlias
-    /// ```
-    ///
-    /// Third, an alias can point to many of the above through unions:
-    ///
-    /// ```ignore
-    /// type Alias = SomeClass | EnumAlias
-    /// ```
-    ///
-    /// This graph stores the names of all the symbols that the type alias
-    /// points to.
-    ///
-    ///
-    /// TODO @antonio: Remove this and just store IDs. Then  get field type from
-    /// AST and resolve final type and store that in resolved_aliases below.
-    /// Change the type from hash set to field type because resolution requires
-    /// creating a type that does not even exist in the AST.
-    pub(super) type_aliases: HashMap<ast::TypeAliasId, HashSet<String>>,
-
-    /// Same as [`Self::type_aliases`] but without intermediate edges in the
-    /// graph.
-    ///
-    /// Pointers here point directly to the resolved type. Example:
+    /// A type alias con point to one or many other type aliases.
     ///
     /// ```
     /// type AliasOne = SomeClass
-    /// type AliasTwo = AliasOne
+    /// type AliasTwo = AnotherClass
     /// type AliasThree = AliasTwo
+    /// type AliasFour = AliasOne | AliasTwo
     /// ```
     ///
+    /// In the above example, `AliasFour` would be resolved to the type
+    /// `SomeClass | AnotherClass`, which does not even exist in the AST. That's
+    /// why we need to store the resolution here.
+    ///
     /// Contents would be `AliasThree -> SomeClass`.
-    pub(super) resolved_type_aliases: HashMap<ast::TypeAliasId, HashSet<String>>,
+    pub(super) resolved_type_aliases: HashMap<ast::TypeAliasId, FieldType>,
 
     /// Strongly connected components of the dependency graph.
     ///
@@ -392,30 +360,102 @@ fn visit_class<'db>(
     });
 }
 
+/// Returns a "virtual" type that represents the fully resolved alias.
+///
+/// We call it "virtual" because it might not exist in the AST. Basic example:
+///
+/// ```ignore
+/// type AliasOne = SomeClass
+/// type AliasTwo = AnotherClass
+/// type AliasThree = AliasOne | AliasTwo | int
+/// ```
+///
+/// The type would resolve to `SomeClass | AnotherClass | int`, which is not
+/// stored in the AST.
+fn resolve_type_alias(field_type: &FieldType, ctx: &mut Context<'_>) -> FieldType {
+    match field_type {
+        // For symbols we need to check if we're dealing with aliases.
+        FieldType::Symbol(arity, ident, span) => {
+            let Some(string_id) = ctx.interner.lookup(ident.name()) else {
+                unreachable!(
+                    "Attempting to resolve alias `{ident}` that does not exist in the interner"
+                );
+            };
+
+            let Some(top_id) = ctx.names.tops.get(&string_id) else {
+                unreachable!("Alias name `{ident}` is not registered in the context");
+            };
+
+            match top_id {
+                ast::TopId::TypeAlias(alias_id) => {
+                    // Check if we can avoid deeper recursion.
+                    if let Some(resolved) = ctx.types.resolved_type_aliases.get(alias_id) {
+                        return resolved.to_owned();
+                    }
+
+                    // Recurse... TODO: Recursive types and infinite cycles :(
+                    let resolved = resolve_type_alias(&ctx.ast[*alias_id].value, ctx);
+
+                    // Sync arity. Basically stuff like:
+                    //
+                    // type AliasOne = SomeClass?
+                    // type AliasTwo = AliasOne
+                    //
+                    // AliasTwo resolves to an "optional" type.
+                    if resolved.is_optional() || arity.is_optional() {
+                        resolved.to_nullable()
+                    } else {
+                        resolved
+                    }
+                }
+
+                // Class or enum. Already "resolved", pop off the stack.
+                _ => field_type.to_owned(),
+            }
+        }
+
+        // Recurse and resolve each type individually.
+        FieldType::Union(arity, items, span, attrs)
+        | FieldType::Tuple(arity, items, span, attrs) => {
+            let resolved = items
+                .iter()
+                .map(|item| resolve_type_alias(item, ctx))
+                .collect();
+
+            match field_type {
+                FieldType::Union(..) => {
+                    FieldType::Union(*arity, resolved, span.clone(), attrs.clone())
+                }
+                FieldType::Tuple(..) => {
+                    FieldType::Tuple(*arity, resolved, span.clone(), attrs.clone())
+                }
+                _ => unreachable!("should only match tuples and unions"),
+            }
+        }
+
+        // Base case, primitives or other types that are not aliases. No more
+        // "pointers" and graphs here.
+        _ => field_type.to_owned(),
+    }
+}
+
 fn visit_type_alias<'db>(
     alias_id: ast::TypeAliasId,
     assignment: &'db ast::Assignment,
     ctx: &mut Context<'db>,
 ) {
-    let targets = ctx
-        .types
-        .type_aliases
-        .entry(alias_id)
-        .or_insert(HashSet::new());
-
-    // Find all the symbols that the type alias points to.
-    let mut queue = VecDeque::from_iter([&assignment.value]);
-    while let Some(item) = queue.pop_front() {
-        match item {
-            FieldType::Symbol(..) => {
-                targets.insert(item.name());
-            }
-            FieldType::Union(_, items, ..) | FieldType::Tuple(_, items, ..) => {
-                queue.extend(items.iter());
-            }
-            _ => {}
-        }
+    // Maybe this can't even happen since we iterate over the vec of tops and
+    // just get IDs sequentially, but anyway check just in case.
+    if ctx.types.resolved_type_aliases.contains_key(&alias_id) {
+        return;
     }
+
+    // Now resolve the type.
+    let resolved = resolve_type_alias(&assignment.value, ctx);
+
+    // TODO: Can we add types to the map recursively while solving them at
+    // the same time? It might speed up very long chains of aliases.
+    ctx.types.resolved_type_aliases.insert(alias_id, resolved);
 }
 
 fn visit_function<'db>(idx: ValExpId, function: &'db ast::ValueExprBlock, ctx: &mut Context<'db>) {

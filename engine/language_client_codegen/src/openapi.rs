@@ -541,7 +541,7 @@ impl<'ir> ToTypeReferenceInTypeDefinition<'ir> for FieldType {
                     r#ref: format!("#/components/schemas/{}", name),
                 },
             },
-            FieldType::Alias(_, _) => todo!(),
+            FieldType::Alias { resolution, .. } => resolution.to_type_spec(ir)?,
             FieldType::Literal(v) => TypeSpecWithMeta {
                 meta: TypeMetadata {
                     title: None,
