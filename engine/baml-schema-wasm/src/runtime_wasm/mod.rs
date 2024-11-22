@@ -511,12 +511,7 @@ fn flatten_checks(value: &BamlValueWithFlags) -> (serde_json::Value, usize) {
         .flat_map(|f| match f {
             Flag::ConstraintResults(c) => c
                 .iter()
-                .map(|(label, _expr, b)| {
-                    (
-                        label.clone(),
-                        *b,
-                    )
-                })
+                .map(|(label, _expr, b)| (label.clone(), *b))
                 .collect::<Vec<_>>(),
             _ => vec![],
         })
@@ -816,6 +811,9 @@ fn get_dummy_value(
         baml_runtime::FieldType::Literal(_) => None,
         baml_runtime::FieldType::Enum(_) => None,
         baml_runtime::FieldType::Class(_) => None,
+        baml_runtime::FieldType::Alias { resolution, .. } => {
+            get_dummy_value(indent, allow_multiline, &resolution)
+        }
         baml_runtime::FieldType::List(item) => {
             let dummy = get_dummy_value(indent + 1, allow_multiline, item);
             // Repeat it 2 times

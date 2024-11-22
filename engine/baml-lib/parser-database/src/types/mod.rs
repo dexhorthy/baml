@@ -235,7 +235,7 @@ pub(super) struct Types {
     ///
     /// A type alias con point to one or many other type aliases.
     ///
-    /// ```
+    /// ```ignore
     /// type AliasOne = SomeClass
     /// type AliasTwo = AnotherClass
     /// type AliasThree = AliasTwo
