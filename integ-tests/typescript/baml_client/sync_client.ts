@@ -1568,6 +1568,31 @@ export class BamlSyncClient {
     }
   }
   
+  MapAlias(
+      m: Record<string, string[]>,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): Record<string, string[]> {
+    try {
+    const raw = this.runtime.callFunctionSync(
+      "MapAlias",
+      {
+        "m": m
+      },
+      this.ctx_manager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __baml_options__?.clientRegistry,
+    )
+    return raw.parsed() as Record<string, string[]>
+    } catch (error: any) {
+      const bamlError = createBamlValidationError(error);
+      if (bamlError instanceof BamlValidationError) {
+        throw bamlError;
+      } else {
+        throw error;
+      }
+    }
+  }
+  
   MyFunc(
       input: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
@@ -1583,6 +1608,31 @@ export class BamlSyncClient {
       __baml_options__?.clientRegistry,
     )
     return raw.parsed() as DynamicOutput
+    } catch (error: any) {
+      const bamlError = createBamlValidationError(error);
+      if (bamlError instanceof BamlValidationError) {
+        throw bamlError;
+      } else {
+        throw error;
+      }
+    }
+  }
+  
+  NestedAlias(
+      c: number | string | boolean | number | string[] | Record<string, string[]>,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): number | string | boolean | number | string[] | Record<string, string[]> {
+    try {
+    const raw = this.runtime.callFunctionSync(
+      "NestedAlias",
+      {
+        "c": c
+      },
+      this.ctx_manager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __baml_options__?.clientRegistry,
+    )
+    return raw.parsed() as number | string | boolean | number | string[] | Record<string, string[]>
     } catch (error: any) {
       const bamlError = createBamlValidationError(error);
       if (bamlError instanceof BamlValidationError) {
@@ -1658,6 +1708,31 @@ export class BamlSyncClient {
       __baml_options__?.clientRegistry,
     )
     return raw.parsed() as Checked<number,"too_big">
+    } catch (error: any) {
+      const bamlError = createBamlValidationError(error);
+      if (bamlError instanceof BamlValidationError) {
+        throw bamlError;
+      } else {
+        throw error;
+      }
+    }
+  }
+  
+  PrimitiveAlias(
+      p: number | string | boolean | number,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): number | string | boolean | number {
+    try {
+    const raw = this.runtime.callFunctionSync(
+      "PrimitiveAlias",
+      {
+        "p": p
+      },
+      this.ctx_manager.cloneContext(),
+      __baml_options__?.tb?.__tb(),
+      __baml_options__?.clientRegistry,
+    )
+    return raw.parsed() as number | string | boolean | number
     } catch (error: any) {
       const bamlError = createBamlValidationError(error);
       if (bamlError instanceof BamlValidationError) {

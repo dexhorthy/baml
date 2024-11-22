@@ -363,7 +363,9 @@ fn relevant_data_models<'a>(
                     recursive_classes.insert(cls.to_owned());
                 }
             }
-            (FieldType::Alias { .. }, _) => todo!(),
+            (FieldType::Alias { resolution, .. }, _) => {
+                start.push(*resolution.clone());
+            }
             (FieldType::Literal(_), _) => {}
             (FieldType::Primitive(_), _) => {}
             (FieldType::Constrained { .. }, _) => {

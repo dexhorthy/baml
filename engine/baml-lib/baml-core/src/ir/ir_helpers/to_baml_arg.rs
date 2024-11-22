@@ -263,7 +263,9 @@ impl ArgCoercer {
                     Err(())
                 }
             },
-            (FieldType::Alias { .. }, _) => todo!(),
+            (FieldType::Alias { resolution, .. }, _) => {
+                self.coerce_arg(ir, &resolution, value, scope)
+            }
             (FieldType::List(item), _) => match value {
                 BamlValue::List(arr) => {
                     let mut items = Vec::new();

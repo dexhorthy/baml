@@ -1453,6 +1453,29 @@ class BamlAsyncClient:
       )
       return cast(types.NestedBlockConstraint, raw.cast_to(types, types))
     
+    async def MapAlias(
+        self,
+        m: Dict[str, List[str]],
+        baml_options: BamlCallOptions = {},
+    ) -> Dict[str, List[str]]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = await self.__runtime.call_function(
+        "MapAlias",
+        {
+          "m": m,
+        },
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+      return cast(Dict[str, List[str]], raw.cast_to(types, types))
+    
     async def MyFunc(
         self,
         input: str,
@@ -1475,6 +1498,29 @@ class BamlAsyncClient:
         __cr__,
       )
       return cast(types.DynamicOutput, raw.cast_to(types, types))
+    
+    async def NestedAlias(
+        self,
+        c: Union[Union[int, str, bool, float], List[str], Dict[str, List[str]]],
+        baml_options: BamlCallOptions = {},
+    ) -> Union[Union[int, str, bool, float], List[str], Dict[str, List[str]]]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = await self.__runtime.call_function(
+        "NestedAlias",
+        {
+          "c": c,
+        },
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+      return cast(Union[Union[int, str, bool, float], List[str], Dict[str, List[str]]], raw.cast_to(types, types))
     
     async def OptionalTest_Function(
         self,
@@ -1544,6 +1590,29 @@ class BamlAsyncClient:
         __cr__,
       )
       return cast(Checked[int,types.Literal["too_big"]], raw.cast_to(types, types))
+    
+    async def PrimitiveAlias(
+        self,
+        p: Union[int, str, bool, float],
+        baml_options: BamlCallOptions = {},
+    ) -> Union[int, str, bool, float]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = await self.__runtime.call_function(
+        "PrimitiveAlias",
+        {
+          "p": p,
+        },
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+      return cast(Union[int, str, bool, float], raw.cast_to(types, types))
     
     async def PromptTestClaude(
         self,
@@ -4610,6 +4679,36 @@ class BamlStreamClient:
         self.__ctx_manager.get(),
       )
     
+    def MapAlias(
+        self,
+        m: Dict[str, List[str]],
+        baml_options: BamlCallOptions = {},
+    ) -> baml_py.BamlStream[Dict[str, List[Optional[str]]], Dict[str, List[str]]]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = self.__runtime.stream_function(
+        "MapAlias",
+        {
+          "m": m,
+        },
+        None,
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+
+      return baml_py.BamlStream[Dict[str, List[Optional[str]]], Dict[str, List[str]]](
+        raw,
+        lambda x: cast(Dict[str, List[Optional[str]]], x.cast_to(types, partial_types)),
+        lambda x: cast(Dict[str, List[str]], x.cast_to(types, types)),
+        self.__ctx_manager.get(),
+      )
+    
     def MyFunc(
         self,
         input: str,
@@ -4637,6 +4736,36 @@ class BamlStreamClient:
         raw,
         lambda x: cast(partial_types.DynamicOutput, x.cast_to(types, partial_types)),
         lambda x: cast(types.DynamicOutput, x.cast_to(types, types)),
+        self.__ctx_manager.get(),
+      )
+    
+    def NestedAlias(
+        self,
+        c: Union[Union[int, str, bool, float], List[str], Dict[str, List[str]]],
+        baml_options: BamlCallOptions = {},
+    ) -> baml_py.BamlStream[Optional[Union[Optional[Union[Optional[int], Optional[str], Optional[bool], Optional[float]]], List[Optional[str]], Dict[str, List[Optional[str]]]]], Union[Union[int, str, bool, float], List[str], Dict[str, List[str]]]]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = self.__runtime.stream_function(
+        "NestedAlias",
+        {
+          "c": c,
+        },
+        None,
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+
+      return baml_py.BamlStream[Optional[Union[Optional[Union[Optional[int], Optional[str], Optional[bool], Optional[float]]], List[Optional[str]], Dict[str, List[Optional[str]]]]], Union[Union[int, str, bool, float], List[str], Dict[str, List[str]]]](
+        raw,
+        lambda x: cast(Optional[Union[Optional[Union[Optional[int], Optional[str], Optional[bool], Optional[float]]], List[Optional[str]], Dict[str, List[Optional[str]]]]], x.cast_to(types, partial_types)),
+        lambda x: cast(Union[Union[int, str, bool, float], List[str], Dict[str, List[str]]], x.cast_to(types, types)),
         self.__ctx_manager.get(),
       )
     
@@ -4727,6 +4856,36 @@ class BamlStreamClient:
         raw,
         lambda x: cast(Checked[Optional[int],types.Literal["too_big"]], x.cast_to(types, partial_types)),
         lambda x: cast(Checked[int,types.Literal["too_big"]], x.cast_to(types, types)),
+        self.__ctx_manager.get(),
+      )
+    
+    def PrimitiveAlias(
+        self,
+        p: Union[int, str, bool, float],
+        baml_options: BamlCallOptions = {},
+    ) -> baml_py.BamlStream[Optional[Union[Optional[int], Optional[str], Optional[bool], Optional[float]]], Union[int, str, bool, float]]:
+      __tb__ = baml_options.get("tb", None)
+      if __tb__ is not None:
+        tb = __tb__._tb # type: ignore (we know how to use this private attribute)
+      else:
+        tb = None
+      __cr__ = baml_options.get("client_registry", None)
+
+      raw = self.__runtime.stream_function(
+        "PrimitiveAlias",
+        {
+          "p": p,
+        },
+        None,
+        self.__ctx_manager.get(),
+        tb,
+        __cr__,
+      )
+
+      return baml_py.BamlStream[Optional[Union[Optional[int], Optional[str], Optional[bool], Optional[float]]], Union[int, str, bool, float]](
+        raw,
+        lambda x: cast(Optional[Union[Optional[int], Optional[str], Optional[bool], Optional[float]]], x.cast_to(types, partial_types)),
+        lambda x: cast(Union[int, str, bool, float], x.cast_to(types, types)),
         self.__ctx_manager.get(),
       )
     

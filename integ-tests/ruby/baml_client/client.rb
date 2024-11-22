@@ -2005,6 +2005,38 @@ module Baml
     sig {
       params(
         varargs: T.untyped,
+        m: T::Hash[String, T::Array[String]],
+        baml_options: T::Hash[Symbol, T.any(Baml::TypeBuilder, Baml::ClientRegistry)]
+      ).returns(T::Hash[String, T::Array[String]])
+    }
+    def MapAlias(
+        *varargs,
+        m:,
+        baml_options: {}
+    )
+      if varargs.any?
+        
+        raise ArgumentError.new("MapAlias may only be called with keyword arguments")
+      end
+      if (baml_options.keys - [:client_registry, :tb]).any?
+        raise ArgumentError.new("Received unknown keys in baml_options (valid keys: :client_registry, :tb): #{baml_options.keys - [:client_registry, :tb]}")
+      end
+
+      raw = @runtime.call_function(
+        "MapAlias",
+        {
+          m: m,
+        },
+        @ctx_manager,
+        baml_options[:tb]&.instance_variable_get(:@registry),
+        baml_options[:client_registry],
+      )
+      (raw.parsed_using_types(Baml::Types))
+    end
+
+    sig {
+      params(
+        varargs: T.untyped,
         input: String,
         baml_options: T::Hash[Symbol, T.any(Baml::TypeBuilder, Baml::ClientRegistry)]
       ).returns(Baml::Types::DynamicOutput)
@@ -2026,6 +2058,38 @@ module Baml
         "MyFunc",
         {
           input: input,
+        },
+        @ctx_manager,
+        baml_options[:tb]&.instance_variable_get(:@registry),
+        baml_options[:client_registry],
+      )
+      (raw.parsed_using_types(Baml::Types))
+    end
+
+    sig {
+      params(
+        varargs: T.untyped,
+        c: T.any(T.any(Integer, String, T::Boolean, Float), T::Array[String], T::Hash[String, T::Array[String]]),
+        baml_options: T::Hash[Symbol, T.any(Baml::TypeBuilder, Baml::ClientRegistry)]
+      ).returns(T.any(T.any(Integer, String, T::Boolean, Float), T::Array[String], T::Hash[String, T::Array[String]]))
+    }
+    def NestedAlias(
+        *varargs,
+        c:,
+        baml_options: {}
+    )
+      if varargs.any?
+        
+        raise ArgumentError.new("NestedAlias may only be called with keyword arguments")
+      end
+      if (baml_options.keys - [:client_registry, :tb]).any?
+        raise ArgumentError.new("Received unknown keys in baml_options (valid keys: :client_registry, :tb): #{baml_options.keys - [:client_registry, :tb]}")
+      end
+
+      raw = @runtime.call_function(
+        "NestedAlias",
+        {
+          c: c,
         },
         @ctx_manager,
         baml_options[:tb]&.instance_variable_get(:@registry),
@@ -2122,6 +2186,38 @@ module Baml
         "PredictAgeBare",
         {
           inp: inp,
+        },
+        @ctx_manager,
+        baml_options[:tb]&.instance_variable_get(:@registry),
+        baml_options[:client_registry],
+      )
+      (raw.parsed_using_types(Baml::Types))
+    end
+
+    sig {
+      params(
+        varargs: T.untyped,
+        p: T.any(Integer, String, T::Boolean, Float),
+        baml_options: T::Hash[Symbol, T.any(Baml::TypeBuilder, Baml::ClientRegistry)]
+      ).returns(T.any(Integer, String, T::Boolean, Float))
+    }
+    def PrimitiveAlias(
+        *varargs,
+        p:,
+        baml_options: {}
+    )
+      if varargs.any?
+        
+        raise ArgumentError.new("PrimitiveAlias may only be called with keyword arguments")
+      end
+      if (baml_options.keys - [:client_registry, :tb]).any?
+        raise ArgumentError.new("Received unknown keys in baml_options (valid keys: :client_registry, :tb): #{baml_options.keys - [:client_registry, :tb]}")
+      end
+
+      raw = @runtime.call_function(
+        "PrimitiveAlias",
+        {
+          p: p,
         },
         @ctx_manager,
         baml_options[:tb]&.instance_variable_get(:@registry),
@@ -5977,6 +6073,41 @@ module Baml
     sig {
       params(
         varargs: T.untyped,
+        m: T::Hash[String, T::Array[String]],
+        baml_options: T::Hash[Symbol, T.any(Baml::TypeBuilder, Baml::ClientRegistry)]
+      ).returns(Baml::BamlStream[T::Hash[String, T::Array[String]]])
+    }
+    def MapAlias(
+        *varargs,
+        m:,
+        baml_options: {}
+    )
+      if varargs.any?
+        
+        raise ArgumentError.new("MapAlias may only be called with keyword arguments")
+      end
+      if (baml_options.keys - [:client_registry, :tb]).any?
+        raise ArgumentError.new("Received unknown keys in baml_options (valid keys: :client_registry, :tb): #{baml_options.keys - [:client_registry, :tb]}")
+      end
+
+      raw = @runtime.stream_function(
+        "MapAlias",
+        {
+          m: m,
+        },
+        @ctx_manager,
+        baml_options[:tb]&.instance_variable_get(:@registry),
+        baml_options[:client_registry],
+      )
+      Baml::BamlStream[T::Hash[String, T::Array[T.nilable(String)]], T::Hash[String, T::Array[String]]].new(
+        ffi_stream: raw,
+        ctx_manager: @ctx_manager
+      )
+    end
+
+    sig {
+      params(
+        varargs: T.untyped,
         input: String,
         baml_options: T::Hash[Symbol, T.any(Baml::TypeBuilder, Baml::ClientRegistry)]
       ).returns(Baml::BamlStream[Baml::Types::DynamicOutput])
@@ -6004,6 +6135,41 @@ module Baml
         baml_options[:client_registry],
       )
       Baml::BamlStream[Baml::PartialTypes::DynamicOutput, Baml::Types::DynamicOutput].new(
+        ffi_stream: raw,
+        ctx_manager: @ctx_manager
+      )
+    end
+
+    sig {
+      params(
+        varargs: T.untyped,
+        c: T.any(T.any(Integer, String, T::Boolean, Float), T::Array[String], T::Hash[String, T::Array[String]]),
+        baml_options: T::Hash[Symbol, T.any(Baml::TypeBuilder, Baml::ClientRegistry)]
+      ).returns(Baml::BamlStream[T.any(T.any(Integer, String, T::Boolean, Float), T::Array[String], T::Hash[String, T::Array[String]])])
+    }
+    def NestedAlias(
+        *varargs,
+        c:,
+        baml_options: {}
+    )
+      if varargs.any?
+        
+        raise ArgumentError.new("NestedAlias may only be called with keyword arguments")
+      end
+      if (baml_options.keys - [:client_registry, :tb]).any?
+        raise ArgumentError.new("Received unknown keys in baml_options (valid keys: :client_registry, :tb): #{baml_options.keys - [:client_registry, :tb]}")
+      end
+
+      raw = @runtime.stream_function(
+        "NestedAlias",
+        {
+          c: c,
+        },
+        @ctx_manager,
+        baml_options[:tb]&.instance_variable_get(:@registry),
+        baml_options[:client_registry],
+      )
+      Baml::BamlStream[T.nilable(T.any(T.nilable(T.any(T.nilable(Integer), T.nilable(String), T.nilable(T::Boolean), T.nilable(Float))), T::Array[T.nilable(String)], T::Hash[String, T::Array[T.nilable(String)]])), T.any(T.any(Integer, String, T::Boolean, Float), T::Array[String], T::Hash[String, T::Array[String]])].new(
         ffi_stream: raw,
         ctx_manager: @ctx_manager
       )
@@ -6109,6 +6275,41 @@ module Baml
         baml_options[:client_registry],
       )
       Baml::BamlStream[Baml::Checked[T.nilable(Integer)], Baml::Checked[Integer]].new(
+        ffi_stream: raw,
+        ctx_manager: @ctx_manager
+      )
+    end
+
+    sig {
+      params(
+        varargs: T.untyped,
+        p: T.any(Integer, String, T::Boolean, Float),
+        baml_options: T::Hash[Symbol, T.any(Baml::TypeBuilder, Baml::ClientRegistry)]
+      ).returns(Baml::BamlStream[T.any(Integer, String, T::Boolean, Float)])
+    }
+    def PrimitiveAlias(
+        *varargs,
+        p:,
+        baml_options: {}
+    )
+      if varargs.any?
+        
+        raise ArgumentError.new("PrimitiveAlias may only be called with keyword arguments")
+      end
+      if (baml_options.keys - [:client_registry, :tb]).any?
+        raise ArgumentError.new("Received unknown keys in baml_options (valid keys: :client_registry, :tb): #{baml_options.keys - [:client_registry, :tb]}")
+      end
+
+      raw = @runtime.stream_function(
+        "PrimitiveAlias",
+        {
+          p: p,
+        },
+        @ctx_manager,
+        baml_options[:tb]&.instance_variable_get(:@registry),
+        baml_options[:client_registry],
+      )
+      Baml::BamlStream[T.nilable(T.any(T.nilable(Integer), T.nilable(String), T.nilable(T::Boolean), T.nilable(Float))), T.any(Integer, String, T::Boolean, Float)].new(
         ffi_stream: raw,
         ctx_manager: @ctx_manager
       )

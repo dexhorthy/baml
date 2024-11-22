@@ -1568,6 +1568,31 @@ export class BamlAsyncClient {
     }
   }
   
+  async MapAlias(
+      m: Record<string, string[]>,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): Promise<Record<string, string[]>> {
+    try {
+      const raw = await this.runtime.callFunction(
+        "MapAlias",
+        {
+          "m": m
+        },
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+      )
+      return raw.parsed() as Record<string, string[]>
+    } catch (error: any) {
+      const bamlError = createBamlValidationError(error);
+      if (bamlError instanceof BamlValidationError) {
+        throw bamlError;
+      } else {
+        throw error;
+      }
+    }
+  }
+  
   async MyFunc(
       input: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
@@ -1583,6 +1608,31 @@ export class BamlAsyncClient {
         __baml_options__?.clientRegistry,
       )
       return raw.parsed() as DynamicOutput
+    } catch (error: any) {
+      const bamlError = createBamlValidationError(error);
+      if (bamlError instanceof BamlValidationError) {
+        throw bamlError;
+      } else {
+        throw error;
+      }
+    }
+  }
+  
+  async NestedAlias(
+      c: number | string | boolean | number | string[] | Record<string, string[]>,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): Promise<number | string | boolean | number | string[] | Record<string, string[]>> {
+    try {
+      const raw = await this.runtime.callFunction(
+        "NestedAlias",
+        {
+          "c": c
+        },
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+      )
+      return raw.parsed() as number | string | boolean | number | string[] | Record<string, string[]>
     } catch (error: any) {
       const bamlError = createBamlValidationError(error);
       if (bamlError instanceof BamlValidationError) {
@@ -1658,6 +1708,31 @@ export class BamlAsyncClient {
         __baml_options__?.clientRegistry,
       )
       return raw.parsed() as Checked<number,"too_big">
+    } catch (error: any) {
+      const bamlError = createBamlValidationError(error);
+      if (bamlError instanceof BamlValidationError) {
+        throw bamlError;
+      } else {
+        throw error;
+      }
+    }
+  }
+  
+  async PrimitiveAlias(
+      p: number | string | boolean | number,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): Promise<number | string | boolean | number> {
+    try {
+      const raw = await this.runtime.callFunction(
+        "PrimitiveAlias",
+        {
+          "p": p
+        },
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+      )
+      return raw.parsed() as number | string | boolean | number
     } catch (error: any) {
       const bamlError = createBamlValidationError(error);
       if (bamlError instanceof BamlValidationError) {
@@ -5012,6 +5087,39 @@ class BamlStreamClient {
     }
   }
   
+  MapAlias(
+      m: Record<string, string[]>,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): BamlStream<RecursivePartialNull<Record<string, string[]>>, Record<string, string[]>> {
+    try {
+      const raw = this.runtime.streamFunction(
+        "MapAlias",
+        {
+          "m": m
+        },
+        undefined,
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+      )
+      return new BamlStream<RecursivePartialNull<Record<string, string[]>>, Record<string, string[]>>(
+        raw,
+        (a): a is RecursivePartialNull<Record<string, string[]>> => a,
+        (a): a is Record<string, string[]> => a,
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+      )
+    } catch (error) {
+      if (error instanceof Error) {
+        const bamlError = createBamlValidationError(error);
+        if (bamlError instanceof BamlValidationError) {
+          throw bamlError;
+        }
+      }
+      throw error;
+    }
+  }
+  
   MyFunc(
       input: string,
       __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
@@ -5031,6 +5139,39 @@ class BamlStreamClient {
         raw,
         (a): a is RecursivePartialNull<DynamicOutput> => a,
         (a): a is DynamicOutput => a,
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+      )
+    } catch (error) {
+      if (error instanceof Error) {
+        const bamlError = createBamlValidationError(error);
+        if (bamlError instanceof BamlValidationError) {
+          throw bamlError;
+        }
+      }
+      throw error;
+    }
+  }
+  
+  NestedAlias(
+      c: number | string | boolean | number | string[] | Record<string, string[]>,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): BamlStream<RecursivePartialNull<number | string | boolean | number | string[] | Record<string, string[]>>, number | string | boolean | number | string[] | Record<string, string[]>> {
+    try {
+      const raw = this.runtime.streamFunction(
+        "NestedAlias",
+        {
+          "c": c
+        },
+        undefined,
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+      )
+      return new BamlStream<RecursivePartialNull<number | string | boolean | number | string[] | Record<string, string[]>>, number | string | boolean | number | string[] | Record<string, string[]>>(
+        raw,
+        (a): a is RecursivePartialNull<number | string | boolean | number | string[] | Record<string, string[]>> => a,
+        (a): a is number | string | boolean | number | string[] | Record<string, string[]> => a,
         this.ctx_manager.cloneContext(),
         __baml_options__?.tb?.__tb(),
       )
@@ -5130,6 +5271,39 @@ class BamlStreamClient {
         raw,
         (a): a is RecursivePartialNull<Checked<number,"too_big">> => a,
         (a): a is Checked<number,"too_big"> => a,
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+      )
+    } catch (error) {
+      if (error instanceof Error) {
+        const bamlError = createBamlValidationError(error);
+        if (bamlError instanceof BamlValidationError) {
+          throw bamlError;
+        }
+      }
+      throw error;
+    }
+  }
+  
+  PrimitiveAlias(
+      p: number | string | boolean | number,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry }
+  ): BamlStream<RecursivePartialNull<number | string | boolean | number>, number | string | boolean | number> {
+    try {
+      const raw = this.runtime.streamFunction(
+        "PrimitiveAlias",
+        {
+          "p": p
+        },
+        undefined,
+        this.ctx_manager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+      )
+      return new BamlStream<RecursivePartialNull<number | string | boolean | number>, number | string | boolean | number>(
+        raw,
+        (a): a is RecursivePartialNull<number | string | boolean | number> => a,
+        (a): a is number | string | boolean | number => a,
         this.ctx_manager.cloneContext(),
         __baml_options__?.tb?.__tb(),
       )

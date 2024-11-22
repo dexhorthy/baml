@@ -133,8 +133,7 @@ fn relevant_data_models<'a>(
     let mut recursive_classes = IndexSet::new();
     let mut start: Vec<baml_types::FieldType> = vec![output.clone()];
 
-    while !start.is_empty() {
-        let output = start.pop().unwrap();
+    while let Some(output) = start.pop() {
         match ir.distribute_constraints(&output) {
             (FieldType::Enum(enm), constraints) => {
                 if checked_types.insert(output.to_string()) {
