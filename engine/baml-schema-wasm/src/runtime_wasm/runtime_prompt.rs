@@ -9,6 +9,7 @@ use baml_runtime::{
 };
 use serde_json::json;
 
+use crate::runtime_wasm::ToJsValue;
 use baml_types::{BamlMediaContent, BamlMediaType, MediaBase64};
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
